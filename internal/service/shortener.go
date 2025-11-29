@@ -8,11 +8,12 @@ var BD = make(map[string]string)
 
 func ShortURL(url string) string {
 	toReturn := "EwHXdJfB"
-	if _, ok := BD[toReturn]; ok {
-		return toReturn
-	} else {
-		BD[toReturn] = url
+	if value, ok := BD[toReturn]; ok {
+		if value == url {
+			return toReturn
+		}
 	}
+	BD[toReturn] = url
 	return toReturn
 }
 

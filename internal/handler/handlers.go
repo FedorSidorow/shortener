@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/FedorSidorow/shortener/internal/service"
@@ -11,10 +12,10 @@ func ShortThisURL(res http.ResponseWriter, req *http.Request) {
 		http.NotFound(res, req)
 		return
 	}
-	url := req.FormValue("url")
-	data := service.ShortURL(url)
+	url, _ := io.ReadAll(req.Body)
+	data := service.ShortURL(string(url))
 	res.Header().Set("content-type", "text/plain")
-	res.WriteHeader(http.StatusOK)
+	res.WriteHeader(http.StatusCreated)
 	res.Write([]byte(data))
 }
 
@@ -25,6 +26,6 @@ func GetFullURL(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		http.NotFound(res, req)
 	}
-
-	http.Redirect(res, req, url, http.StatusMovedPermanently)
+	res.Header().Set("Location", url)
+	res.WriteHeader(http.StatusTemporaryRedirect)
 }
