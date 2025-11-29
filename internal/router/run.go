@@ -10,7 +10,7 @@ import (
 func Run() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /", handler.ShortThisURL)
-	mux.HandleFunc("GET /{key}", handler.GetFullURL)
+	mux.HandleFunc("/{key}", handler.GetFullURL)
 
 	err := http.ListenAndServe(":8080", mux)
 
