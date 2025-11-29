@@ -4,18 +4,22 @@ import (
 	"fmt"
 )
 
-var BD map[string]string
+var BD = make(map[string]string)
 
 func ShortURL(url string) string {
-	to_return := "EwHXdJfB"
-	BD[to_return] = url
-	return to_return
+	toReturn := "EwHXdJfB"
+	if _, ok := BD[toReturn]; ok {
+		return toReturn
+	} else {
+		BD[toReturn] = url
+	}
+	return toReturn
 }
 
 func ReturnFullURL(key string) (string, error) {
 	if value, ok := BD[key]; ok {
 		return value, nil
 	} else {
-		return "", fmt.Errorf("такой сокращения ссылки нет")
+		return "", fmt.Errorf("такой ссылки сокращения нет")
 	}
 }

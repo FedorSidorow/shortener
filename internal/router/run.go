@@ -1,6 +1,7 @@
 package router
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/FedorSidorow/shortener/internal/handler"
@@ -8,12 +9,13 @@ import (
 
 func Run() error {
 	mux := http.NewServeMux()
-	mux.HandleFunc(`/[a-zA-Z]+`, handler.GetFullURL)
-	mux.HandleFunc(`/`, handler.ShortThisURL)
+	mux.HandleFunc("POST /", handler.ShortThisURL)
+	mux.HandleFunc("GET /{key}", handler.GetFullURL)
 
-	err := http.ListenAndServe(`:8080`, mux)
+	err := http.ListenAndServe(":8080", mux)
+
 	if err != nil {
-		panic(err)
+		log.Fatal("Ошибка запуска сервера:", err)
 	}
 	return nil
 }

@@ -1,33 +1,25 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/FedorSidorow/shortener/internal/service"
 )
 
 func ShortThisURL(res http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodPost {
-		http.Error(res, "Only POST requests are allowed!", http.StatusMethodNotAllowed)
-		return
-	}
 	if req.URL.Path != "/" {
 		http.NotFound(res, req)
 		return
 	}
 	url := req.FormValue("url")
 	data := service.ShortURL(url)
-	fmt.Fprint(res, data)
+	res.Header().Set("content-type", "text/plain")
+	res.WriteHeader(http.StatusOK)
+	res.Write([]byte(data))
 }
 
 func GetFullURL(res http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodGet {
-		http.Error(res, "Only GET requests are allowed!", http.StatusMethodNotAllowed)
-		return
-	}
-	key := strings.TrimPrefix(req.URL.Path, "/")
+	key := req.PathValue("key")
 	url, err := service.ReturnFullURL(key)
 
 	if err != nil {
