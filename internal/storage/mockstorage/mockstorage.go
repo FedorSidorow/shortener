@@ -1,5 +1,7 @@
 package mockstorage
 
+import "fmt"
+
 type mockStorage struct {
 	tempStorage map[string]string
 }
@@ -25,7 +27,7 @@ func (s *mockStorage) Get(key string) (string, error) {
 
 	fullURL, ok := s.tempStorage[key]
 	if !ok {
-		return "", nil
+		return "", fmt.Errorf("такого ключа нет")
 	}
 
 	return fullURL, nil

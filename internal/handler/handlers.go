@@ -52,6 +52,7 @@ func (h *APIHandler) GetURLByKeyHandler(res http.ResponseWriter, req *http.Reque
 	url, err := h.shortService.GetURLByKey(key)
 	if err != nil {
 		http.NotFound(res, req)
+		return
 	}
 	res.Header().Set("Location", url)
 	res.WriteHeader(http.StatusTemporaryRedirect)
