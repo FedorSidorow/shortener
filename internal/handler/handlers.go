@@ -17,7 +17,7 @@ func ShortThisURL(res http.ResponseWriter, req *http.Request) {
 	data := service.ShortURL(string(url))
 	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
-	res.Write([]byte(host + "/" + data))
+	res.Write([]byte("http://" + host + "/" + data))
 }
 
 func GetFullURL(res http.ResponseWriter, req *http.Request) {
