@@ -2,6 +2,8 @@ package server
 
 import (
 	"net/http"
+
+	"github.com/go-chi/chi"
 )
 
 type Handler interface {
@@ -9,9 +11,11 @@ type Handler interface {
 	GetURLByKeyHandler(w http.ResponseWriter, r *http.Request)
 }
 
-func initRouter(handler Handler) *http.ServeMux {
-	mux := http.NewServeMux()
-	mux.HandleFunc("POST /", handler.GenerateShortKeyHandler)
-	mux.HandleFunc("GET /{key}", handler.GetURLByKeyHandler)
-	return mux
+func initRouter(handler Handler) *chi.Mux {
+	router := chi.NewRouter()
+	router.Route("/", func(r chi.Router) {
+		r.Post("/", handler.GenerateShortKeyHandler)
+		r.Get("/{key}", handler.GetURLByKeyHandler)
+	})
+	return router
 }

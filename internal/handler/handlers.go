@@ -3,6 +3,8 @@ package handler
 import (
 	"io"
 	"net/http"
+
+	"github.com/go-chi/chi"
 )
 
 type APIHandler struct {
@@ -48,7 +50,7 @@ func (h *APIHandler) GenerateShortKeyHandler(res http.ResponseWriter, req *http.
 }
 
 func (h *APIHandler) GetURLByKeyHandler(res http.ResponseWriter, req *http.Request) {
-	key := req.PathValue("key")
+	key := chi.URLParam(req, "key")
 	url, err := h.shortService.GetURLByKey(key)
 	if err != nil {
 		http.NotFound(res, req)

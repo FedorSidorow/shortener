@@ -24,11 +24,9 @@ func (s *mockStorage) Set(url string) (string, error) {
 }
 
 func (s *mockStorage) Get(key string) (string, error) {
-
 	fullURL, ok := s.tempStorage[key]
 	if !ok {
 		return "", fmt.Errorf("такого ключа нет")
 	}
-
 	return fullURL, nil
 }
