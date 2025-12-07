@@ -46,7 +46,7 @@ func (h *APIHandler) GenerateShortKeyHandler(res http.ResponseWriter, req *http.
 }
 
 func (h *APIHandler) GetURLByKeyHandler(res http.ResponseWriter, req *http.Request) {
-	key := chi.URLParam(req, "key")
+	key := chi.URLParam(req, "*")
 	println("Ключ полученный из chi.URLParam:", key)
 	url, err := h.shortService.GetURLByKey(key)
 	if err != nil {
