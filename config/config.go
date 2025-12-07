@@ -16,6 +16,8 @@ func CreateOptions() (*Options, error) {
 
 func (options *Options) setValuesFromFlags() {
 	flag.StringVar(&options.A, "a", ":8080", "адрес запуска HTTP-сервера")
+	println("Флаг а - ", options.A)
 	flag.StringVar(&options.B, "b", "EwHXdJfB", "отвечает за базовый адрес результирующего сокращённого URL")
+	println("Флаг б - ", options.B)
 	flag.Parse()
 }
