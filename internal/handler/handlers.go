@@ -4,24 +4,20 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/go-chi/chi"
+	"github.com/FedorSidorow/shortener/internal/interfaces"
+	"github.com/go-chi/chi/v5"
 )
 
 type APIHandler struct {
-	shortService ShortenerServicer
+	shortService interfaces.ShortenerServicer
 }
 
-func NewHandler(service ShortenerServicer) (h *APIHandler, err error) {
+func NewHandler(service interfaces.ShortenerServicer) (h *APIHandler, err error) {
+	println("Инициализация обработчиков событий")
 	hendler := &APIHandler{
 		shortService: service,
 	}
-
 	return hendler, err
-}
-
-type ShortenerServicer interface {
-	GetURLByKey(key string) (string, error)
-	GenerateShortURL(URL string) (string, error)
 }
 
 func (h *APIHandler) GenerateShortKeyHandler(res http.ResponseWriter, req *http.Request) {
@@ -51,11 +47,14 @@ func (h *APIHandler) GenerateShortKeyHandler(res http.ResponseWriter, req *http.
 
 func (h *APIHandler) GetURLByKeyHandler(res http.ResponseWriter, req *http.Request) {
 	key := chi.URLParam(req, "key")
+	println("Ключ полученный из chi.URLParam:", key)
 	url, err := h.shortService.GetURLByKey(key)
 	if err != nil {
 		http.NotFound(res, req)
+		println("Not found")
 		return
 	}
 	res.Header().Set("Location", url)
 	res.WriteHeader(http.StatusTemporaryRedirect)
+	println("Status=", http.StatusTemporaryRedirect)
 }

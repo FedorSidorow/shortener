@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/FedorSidorow/shortener/config"
 	"github.com/FedorSidorow/shortener/internal/service"
 	"github.com/FedorSidorow/shortener/internal/storage/mockstorage"
 )
@@ -38,9 +39,9 @@ func TestAPIHandler_GenerateShortKeyHandler(t *testing.T) {
 			body:    "Bad Request\n",
 		},
 	}
-
+	options := &config.Options{A: "8080", B: "EwHXdJfB"}
 	var (
-		storage, _ = mockstorage.NewStorage()
+		storage, _ = mockstorage.NewStorage(options)
 		newService = service.NewShortenerService(storage)
 		h, _       = NewHandler(newService)
 	)
@@ -83,8 +84,9 @@ func TestAPIHandler_GetURLByKeyHandler(t *testing.T) {
 		},
 	}
 
+	options := &config.Options{A: "8080", B: "EwHXdJfB"}
 	var (
-		storage, _ = mockstorage.NewStorage()
+		storage, _ = mockstorage.NewStorage(options)
 		newService = service.NewShortenerService(storage)
 		h, _       = NewHandler(newService)
 	)
@@ -92,8 +94,8 @@ func TestAPIHandler_GetURLByKeyHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httptest.NewRequest(tt.method, tt.URL, strings.NewReader(tt.reqBody))
 			response := httptest.NewRecorder()
+			request := httptest.NewRequest(tt.method, tt.URL, strings.NewReader(tt.reqBody))
 			h.GetURLByKeyHandler(response, request)
 			assert.Equal(t, tt.code, response.Code, "Код ответа не совпадает с ожидаемым.")
 			assert.Equal(t, tt.body, response.Body.String(), "Тело ответа не совпадает с ожидаемым.")

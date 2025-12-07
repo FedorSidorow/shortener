@@ -1,6 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
+	"github.com/FedorSidorow/shortener/config"
 	"github.com/FedorSidorow/shortener/internal/handler"
 	"github.com/FedorSidorow/shortener/internal/server"
 	"github.com/FedorSidorow/shortener/internal/service"
@@ -9,33 +13,41 @@ import (
 )
 
 func main() {
-	err := run()
+	app, err := run()
 	if err != nil {
-		panic(err)
+		print("Initialized fail: %s\n", err)
+		os.Exit(2)
+	}
+
+	if err := app.Run(); err != nil {
+		print("run app fail: %s\n", err)
+		os.Exit(1)
 	}
 }
 
-func run() error {
+func run() (*server.App, error) {
 	var storage storage.OperationStorager
 	var err error
+	var options *config.Options
 
-	storage, err = mockstorage.NewStorage()
-
+	options, err = config.CreateOptions()
 	if err != nil {
-		return err
+		fmt.Printf("run app fail: %s\n", err)
+	}
+
+	storage, err = mockstorage.NewStorage(options)
+	if err != nil {
+		fmt.Printf("run app fail: %s\n", err)
 	}
 
 	newService := service.NewShortenerService(storage)
 
 	handler, err := handler.NewHandler(newService)
-
 	if err != nil {
-		return err
+		fmt.Printf("run app fail: %s\n", err)
 	}
 
-	if err := server.Run(handler); err != nil {
-		return err
-	}
+	appApp := server.NewApp(options, handler)
 
-	return nil
+	return appApp, nil
 }
