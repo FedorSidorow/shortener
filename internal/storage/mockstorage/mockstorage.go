@@ -13,6 +13,7 @@ type mockStorage struct {
 
 func NewStorage(options *config.Options) (*mockStorage, error) {
 	println("Инициализация хранилища в памяти")
+	println("Клюя для получения - ", options.B)
 	s := &mockStorage{}
 	s.tempStorage = make(map[string]string, 0)
 	s.toReturn = options.B

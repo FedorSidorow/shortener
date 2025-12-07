@@ -10,7 +10,7 @@ func InitRouter(handler interfaces.ShortenerHandler) *chi.Mux {
 	router := chi.NewRouter()
 	router.Route("/", func(r chi.Router) {
 		r.Post("/", handler.GenerateShortKeyHandler)
-		r.Get("/{key}", handler.GetURLByKeyHandler)
+		r.Get(`/{key}`, handler.GetURLByKeyHandler)
 	})
 	return router
 }
