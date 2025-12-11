@@ -1,4 +1,4 @@
-package inmemorystore
+package inMemoryStore
 
 import (
 	"fmt"
