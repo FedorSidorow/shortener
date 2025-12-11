@@ -20,7 +20,7 @@ func CreateOptions() *Options {
 func (options *Options) setValuesFromFlags() {
 	flag.StringVar(&options.A, "a", ":8080", "адрес запуска HTTP-сервера")
 	log.Printf("Флаг а - %s\n", options.A)
-	flag.StringVar(&options.B, "b", "EwHXdJfB", "отвечает за базовый адрес результирующего сокращённого URL")
+	flag.StringVar(&options.B, "b", "", "отвечает за базовый адрес результирующего сокращённого URL")
 	log.Printf("Флаг б - %s\n", options.B)
 	flag.Parse()
 }

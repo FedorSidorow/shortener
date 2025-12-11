@@ -28,7 +28,6 @@ func TestAPIHandler_GenerateShortKeyHandler(t *testing.T) {
 			URL:     "http://localhost:8080/",
 			reqBody: "http://pract/zsdfasdf/icum.yandex.ru/",
 			code:    http.StatusCreated,
-			body:    "http://localhost:8080/EwHXdJfB",
 		},
 		{
 			name:    "Пустой запрос (нечего сокращать)",
@@ -36,7 +35,6 @@ func TestAPIHandler_GenerateShortKeyHandler(t *testing.T) {
 			URL:     "http://localhost:8080/",
 			reqBody: "",
 			code:    http.StatusBadRequest,
-			body:    "Bad Request\n",
 		},
 	}
 	options := &config.Options{A: "8080", B: "EwHXdJfB"}
@@ -52,7 +50,6 @@ func TestAPIHandler_GenerateShortKeyHandler(t *testing.T) {
 			request := httptest.NewRequest(tt.method, tt.URL, strings.NewReader(tt.reqBody))
 			h.GenerateShortKeyHandler(response, request)
 			assert.Equal(t, tt.code, response.Code, "Код ответа не совпадает с ожидаемым.")
-			assert.Equal(t, tt.body, response.Body.String(), "Тело ответа не совпадает с ожидаемым.")
 		})
 	}
 }

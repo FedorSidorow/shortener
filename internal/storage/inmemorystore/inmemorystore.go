@@ -23,12 +23,17 @@ func NewStorage(options *config.Options) (*inMemoryStore, error) {
 }
 
 func (s *inMemoryStore) Set(url string) (string, error) {
-	toReturn := s.toReturn
+	var toReturn string
+	if s.toReturn == "" {
+		toReturn = s.toReturn
+	} else {
+		toReturn = utils.GetRandomString(6)
+	}
+
 	if value, ok := s.tempStorage[toReturn]; ok {
 		if value == url {
 			return toReturn, nil
 		}
-		toReturn = utils.GetRandomString(6)
 	}
 	s.tempStorage[toReturn] = url
 	return toReturn, nil
