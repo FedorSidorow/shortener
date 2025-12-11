@@ -8,7 +8,7 @@ import (
 	"github.com/FedorSidorow/shortener/internal/server"
 	"github.com/FedorSidorow/shortener/internal/service"
 	"github.com/FedorSidorow/shortener/internal/storage"
-	"github.com/FedorSidorow/shortener/internal/storage/inMemoryStore"
+	"github.com/FedorSidorow/shortener/internal/storage/inmemorystore"
 )
 
 func main() {
@@ -27,11 +27,10 @@ func main() {
 func run() (*server.App, error) {
 	var storage storage.OperationStorager
 	var err error
-	var options *config.Options
 
-	options = config.CreateOptions()
+	options := config.CreateOptions()
 
-	storage, err = inMemoryStore.NewStorage(options)
+	storage, err = inmemorystore.NewStorage(options)
 	if err != nil {
 		log.Printf("run app fail with storage init: %s\n", err)
 		return nil, err
