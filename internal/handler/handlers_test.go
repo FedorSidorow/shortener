@@ -10,7 +10,7 @@ import (
 
 	"github.com/FedorSidorow/shortener/config"
 	"github.com/FedorSidorow/shortener/internal/service"
-	"github.com/FedorSidorow/shortener/internal/storage/inMemoryStore"
+	"github.com/FedorSidorow/shortener/internal/storage/inmemorystore"
 )
 
 func TestAPIHandler_GenerateShortKeyHandler(t *testing.T) {
@@ -41,7 +41,7 @@ func TestAPIHandler_GenerateShortKeyHandler(t *testing.T) {
 	}
 	options := &config.Options{A: "8080", B: "EwHXdJfB"}
 	var (
-		storage, _ = inMemoryStore.NewStorage(options)
+		storage, _ = inmemorystore.NewStorage(options)
 		newService = service.NewShortenerService(storage)
 		h, _       = NewHandler(newService)
 	)
@@ -78,7 +78,7 @@ func TestAPIHandler_GetURLByKeyHandler(t *testing.T) {
 
 	options := &config.Options{A: "8080", B: "EwHXdJfB"}
 	var (
-		storage, _ = inMemoryStore.NewStorage(options)
+		storage, _ = inmemorystore.NewStorage(options)
 		newService = service.NewShortenerService(storage)
 		h, _       = NewHandler(newService)
 	)
