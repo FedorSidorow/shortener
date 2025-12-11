@@ -2,7 +2,9 @@ package handler
 
 import (
 	"io"
+	"log"
 	"net/http"
+	"net/url"
 
 	"github.com/FedorSidorow/shortener/internal/interfaces"
 	"github.com/go-chi/chi/v5"
@@ -26,23 +28,37 @@ func (h *APIHandler) GenerateShortKeyHandler(res http.ResponseWriter, req *http.
 		return
 	}
 
-	url, _ := io.ReadAll(req.Body)
+	urlToShort, err := io.ReadAll(req.Body)
+	if err != nil {
+		log.Printf("error while read request body: %s\n", err)
+		http.Error(res, http.StatusText(500), http.StatusInternalServerError)
+		return
+	}
+
 	req.Body.Close()
-	if string(url) == "" {
-		http.Error(res, "Bad Request", http.StatusBadRequest)
+	if string(urlToShort) == "" {
+		http.Error(res, http.StatusText(400), http.StatusBadRequest)
 		return
 	}
 
 	host := req.Host
-	data, err := h.shortService.GenerateShortURL(string(url))
+	data, err := h.shortService.GenerateShortURL(string(urlToShort))
 	if err != nil {
-		http.Error(res, "", http.StatusInternalServerError)
+		log.Printf("error while generate short URL: %s\n", err)
+		http.Error(res, http.StatusText(500), http.StatusInternalServerError)
+		return
+	}
+
+	shortURL, err := url.JoinPath("http://", host, data)
+	if err != nil {
+		log.Printf("error in JoinPath: %s\n", err)
+		http.Error(res, http.StatusText(500), http.StatusInternalServerError)
 		return
 	}
 
 	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
-	res.Write([]byte("http://" + host + "/" + data))
+	res.Write([]byte(shortURL))
 }
 
 func (h *APIHandler) GetURLByKeyHandler(res http.ResponseWriter, req *http.Request) {

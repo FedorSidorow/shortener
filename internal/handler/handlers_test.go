@@ -10,7 +10,7 @@ import (
 
 	"github.com/FedorSidorow/shortener/config"
 	"github.com/FedorSidorow/shortener/internal/service"
-	"github.com/FedorSidorow/shortener/internal/storage/mockstorage"
+	"github.com/FedorSidorow/shortener/internal/storage/inMemoryStore"
 )
 
 func TestAPIHandler_GenerateShortKeyHandler(t *testing.T) {
@@ -41,7 +41,7 @@ func TestAPIHandler_GenerateShortKeyHandler(t *testing.T) {
 	}
 	options := &config.Options{A: "8080", B: "EwHXdJfB"}
 	var (
-		storage, _ = mockstorage.NewStorage(options)
+		storage, _ = inMemoryStore.NewStorage(options)
 		newService = service.NewShortenerService(storage)
 		h, _       = NewHandler(newService)
 	)
@@ -66,14 +66,6 @@ func TestAPIHandler_GetURLByKeyHandler(t *testing.T) {
 		code    int
 		body    string
 	}{
-		// {
-		// 	name:    "Успех",
-		// 	method:  http.MethodGet,
-		// 	URL:     "http://localhost:8080/EwHXdJfB",
-		// 	reqBody: "",
-		// 	code:    http.StatusTemporaryRedirect,
-		// 	body:    "",
-		// },
 		{
 			name:    "Не успех",
 			method:  http.MethodGet,
@@ -86,7 +78,7 @@ func TestAPIHandler_GetURLByKeyHandler(t *testing.T) {
 
 	options := &config.Options{A: "8080", B: "EwHXdJfB"}
 	var (
-		storage, _ = mockstorage.NewStorage(options)
+		storage, _ = inMemoryStore.NewStorage(options)
 		newService = service.NewShortenerService(storage)
 		h, _       = NewHandler(newService)
 	)

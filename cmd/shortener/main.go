@@ -1,27 +1,26 @@
 package main
 
 import (
-	"fmt"
-	"os"
+	"log"
 
 	"github.com/FedorSidorow/shortener/config"
 	"github.com/FedorSidorow/shortener/internal/handler"
 	"github.com/FedorSidorow/shortener/internal/server"
 	"github.com/FedorSidorow/shortener/internal/service"
 	"github.com/FedorSidorow/shortener/internal/storage"
-	"github.com/FedorSidorow/shortener/internal/storage/mockstorage"
+	"github.com/FedorSidorow/shortener/internal/storage/inMemoryStore"
 )
 
 func main() {
 	app, err := run()
 	if err != nil {
-		print("Initialized fail: %s\n", err)
-		os.Exit(2)
+		log.Printf("Error: %s\n", err)
+		log.Fatal("Initialized fail")
 	}
 
 	if err := app.Run(); err != nil {
-		print("run app fail: %s\n", err)
-		os.Exit(1)
+		log.Printf("Error: %s\n", err)
+		log.Fatal("Run app fail")
 	}
 }
 
@@ -30,21 +29,20 @@ func run() (*server.App, error) {
 	var err error
 	var options *config.Options
 
-	options, err = config.CreateOptions()
-	if err != nil {
-		fmt.Printf("run app fail: %s\n", err)
-	}
+	options = config.CreateOptions()
 
-	storage, err = mockstorage.NewStorage(options)
+	storage, err = inMemoryStore.NewStorage(options)
 	if err != nil {
-		fmt.Printf("run app fail: %s\n", err)
+		log.Printf("run app fail with storage init: %s\n", err)
+		return nil, err
 	}
 
 	newService := service.NewShortenerService(storage)
 
 	handler, err := handler.NewHandler(newService)
 	if err != nil {
-		fmt.Printf("run app fail: %s\n", err)
+		log.Printf("run app fail with handlers init: %s\n", err)
+		return nil, err
 	}
 
 	appApp := server.NewApp(options, handler)
