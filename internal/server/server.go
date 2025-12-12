@@ -1,6 +1,8 @@
 package server
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/FedorSidorow/shortener/config"
@@ -13,7 +15,7 @@ type App struct {
 }
 
 func NewApp(options *config.Options, shortenerAPI interfaces.ShortenerHandler) *App {
-	println("Инициализация приложения")
+	log.Printf("Инициализация приложения")
 	return &App{
 		options:      options,
 		shortenerAPI: &shortenerAPI,
@@ -23,14 +25,16 @@ func NewApp(options *config.Options, shortenerAPI interfaces.ShortenerHandler) *
 func (app *App) Run() error {
 	server, err := app.createServer()
 	if err != nil {
-		println("Fail to create server")
+		log.Printf("Fail to create server")
+		return fmt.Errorf("ошибка при попытке создания сервера")
 	}
 
 	if err := server.ListenAndServe(); err != nil {
-		println("Fail to run server")
+		log.Printf("Fail to run server")
+		return fmt.Errorf("ошибка при попытке создания сервера")
 	}
 
-	println("Завершение работы сервера")
+	log.Printf("Завершение работы сервера")
 
 	return nil
 }
@@ -41,6 +45,6 @@ func (app *App) createServer() (*http.Server, error) {
 		Addr:    app.options.A,
 		Handler: router,
 	}
-	println("Сервер запущен по адресу: ", server.Addr)
+	log.Printf("Сервер запущен по адресу: ", server.Addr)
 	return server, nil
 }

@@ -15,7 +15,7 @@ type APIHandler struct {
 }
 
 func NewHandler(service interfaces.ShortenerServicer) (h *APIHandler, err error) {
-	println("Инициализация обработчиков событий")
+	log.Printf("Инициализация обработчиков событий")
 	hendler := &APIHandler{
 		shortService: service,
 	}
@@ -63,14 +63,13 @@ func (h *APIHandler) GenerateShortKeyHandler(res http.ResponseWriter, req *http.
 
 func (h *APIHandler) GetURLByKeyHandler(res http.ResponseWriter, req *http.Request) {
 	key := chi.URLParam(req, "*")
-	println("Ключ полученный из chi.URLParam:", key)
+	log.Printf("Ключ полученный из chi.URLParam: %s \n", key)
 	url, err := h.shortService.GetURLByKey(key)
 	if err != nil {
 		http.NotFound(res, req)
-		println("Not found")
+		log.Printf("Not found")
 		return
 	}
 	res.Header().Set("Location", url)
 	res.WriteHeader(http.StatusTemporaryRedirect)
-	println("Status=", http.StatusTemporaryRedirect)
 }

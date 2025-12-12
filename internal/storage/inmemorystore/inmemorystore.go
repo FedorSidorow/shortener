@@ -25,9 +25,9 @@ func NewStorage(options *config.Options) (*inMemoryStore, error) {
 func (s *inMemoryStore) Set(url string) (string, error) {
 	var toReturn string
 	if s.toReturn == "" {
-		toReturn = s.toReturn
-	} else {
 		toReturn = utils.GetRandomString(6)
+	} else {
+		toReturn = s.toReturn
 	}
 
 	if value, ok := s.tempStorage[toReturn]; ok {
