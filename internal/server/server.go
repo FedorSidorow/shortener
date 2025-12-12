@@ -45,6 +45,6 @@ func (app *App) createServer() (*http.Server, error) {
 		Addr:    app.options.A,
 		Handler: router,
 	}
-	log.Printf("Сервер запущен по адресу: ", server.Addr)
+	log.Printf("Сервер запущен по адресу: %s \n", server.Addr)
 	return server, nil
 }

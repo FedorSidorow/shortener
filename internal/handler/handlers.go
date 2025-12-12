@@ -31,13 +31,13 @@ func (h *APIHandler) GenerateShortKeyHandler(res http.ResponseWriter, req *http.
 	urlToShort, err := io.ReadAll(req.Body)
 	if err != nil {
 		log.Printf("error while read request body: %s\n", err)
-		http.Error(res, http.StatusText(500), http.StatusInternalServerError)
+		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
 	req.Body.Close()
 	if string(urlToShort) == "" {
-		http.Error(res, http.StatusText(400), http.StatusBadRequest)
+		http.Error(res, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 
@@ -45,14 +45,14 @@ func (h *APIHandler) GenerateShortKeyHandler(res http.ResponseWriter, req *http.
 	data, err := h.shortService.GenerateShortURL(string(urlToShort))
 	if err != nil {
 		log.Printf("error while generate short URL: %s\n", err)
-		http.Error(res, http.StatusText(500), http.StatusInternalServerError)
+		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
 	shortURL, err := url.JoinPath("http://", host, data)
 	if err != nil {
 		log.Printf("error in JoinPath: %s\n", err)
-		http.Error(res, http.StatusText(500), http.StatusInternalServerError)
+		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
