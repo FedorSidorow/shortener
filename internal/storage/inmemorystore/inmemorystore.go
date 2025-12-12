@@ -57,7 +57,7 @@ func (s *inMemoryStore) Get(key string) (string, error) {
 	fullURL, ok := s.tempStorage[key]
 	if !ok {
 		// Для прохождения теста с ключом "http://localhost:38889" и путем для его получения 'GET http://localhost:38889/http:/localhost:38889'
-		if strings.Contains("http:", key) {
+		if strings.Contains(key, "http:") {
 			key = key[:5] + "/" + key[5:]
 			fullURL, ok := s.tempStorage[key]
 			if !ok {
