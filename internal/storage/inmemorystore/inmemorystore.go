@@ -44,7 +44,7 @@ func (s *inMemoryStore) Set(url string) (string, error) {
 			}
 		}
 
-		return "", shortenererrors.ErrorCantCreateShortUrl
+		return "", shortenererrors.ErrorCantCreateShortURL
 	} else {
 		// При заданом значении всегда устанавливаем в него
 		toReturn = s.toReturn

@@ -21,7 +21,7 @@ func NewShortenerService(storage interfaces.Storager) *ShortenerService {
 func (svc *ShortenerService) GenerateShortURL(url string) (string, error) {
 	key, err := svc.storage.Set(url)
 	if err != nil {
-		if errors.Is(err, shortenererrors.ErrorCantCreateShortUrl) {
+		if errors.Is(err, shortenererrors.ErrorCantCreateShortURL) {
 			return "", fmt.Errorf("ошибка хранилища данных - не удалось сгенерировать ключ которого нет в хранилище")
 		}
 		return "", fmt.Errorf("ошибка сервиса")

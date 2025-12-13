@@ -2,4 +2,4 @@ package shortenererrors
 
 import "errors"
 
-var ErrorCantCreateShortUrl = errors.New("не удалось сгенерировать ключ которого нет в хранилище")
+var ErrorCantCreateShortURL = errors.New("не удалось сгенерировать ключ которого нет в хранилище")
