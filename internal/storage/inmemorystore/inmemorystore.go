@@ -3,7 +3,6 @@ package inmemorystore
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/FedorSidorow/shortener/config"
 	"github.com/FedorSidorow/shortener/internal/shortenererrors"
@@ -26,7 +25,9 @@ func NewStorage(options *config.Options) (*inMemoryStore, error) {
 
 func (s *inMemoryStore) Set(url string) (string, error) {
 	var toReturn string
+	println("ПредУстановленный ключ -", s.toReturn)
 	if s.toReturn == "" {
+		println("Ключ не предустановлен генерируем")
 		// поиск вдруг такое значение уже установлено
 		for key, value := range s.tempStorage {
 			if value == url {
@@ -39,6 +40,8 @@ func (s *inMemoryStore) Set(url string) (string, error) {
 			toReturn = utils.GetRandomString(6)
 			_, ok := s.tempStorage[toReturn]
 			if !ok {
+				println("Ключ сгенерировался - ", toReturn)
+				println("Устанавливаем значение - ", url)
 				s.tempStorage[toReturn] = url
 				return toReturn, nil
 			}
@@ -46,6 +49,9 @@ func (s *inMemoryStore) Set(url string) (string, error) {
 
 		return "", shortenererrors.ErrorCantCreateShortURL
 	} else {
+		println("Ключ предустановлен")
+		println("Ключ - ", toReturn)
+		println("Устанавливаем значение - ", url)
 		// При заданом значении всегда устанавливаем в него
 		toReturn = s.toReturn
 		s.tempStorage[toReturn] = url
@@ -56,16 +62,12 @@ func (s *inMemoryStore) Set(url string) (string, error) {
 
 func (s *inMemoryStore) Get(key string) (string, error) {
 	fullURL, ok := s.tempStorage[key]
+	println("Ключ по которому ищем - ", key)
+	println("Сейчас в хранилище:")
+	for k, v := range s.tempStorage {
+		println(k, v)
+	}
 	if !ok {
-		// Для прохождения теста с ключом "http://localhost:38889" и путем для его получения 'GET http://localhost:38889/http:/localhost:38889'
-		if strings.Contains(key, "http:") {
-			key = key[:5] + "/" + key[5:]
-			fullURL, ok := s.tempStorage[key]
-			if !ok {
-				return "", fmt.Errorf("такого ключа нет")
-			}
-			return fullURL, nil
-		}
 		return "", fmt.Errorf("такого ключа нет")
 	}
 	return fullURL, nil
