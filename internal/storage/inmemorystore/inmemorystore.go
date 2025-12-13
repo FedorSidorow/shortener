@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/FedorSidorow/shortener/config"
+	"github.com/FedorSidorow/shortener/internal/shortenererrors"
 	"github.com/FedorSidorow/shortener/internal/utils"
 )
 
@@ -43,7 +44,7 @@ func (s *inMemoryStore) Set(url string) (string, error) {
 			}
 		}
 
-		return "", fmt.Errorf("не удалось сгенерировать ключ которого нет в хранилище")
+		return "", shortenererrors.ErrorCantCreateShortUrl
 	} else {
 		// При заданом значении всегда устанавливаем в него
 		toReturn = s.toReturn
