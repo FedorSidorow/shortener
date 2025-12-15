@@ -27,3 +27,24 @@ func TestStorageGet(t *testing.T) {
 		})
 	}
 }
+
+func Test_inMemoryStore_Set(t *testing.T) {
+	tests := []struct {
+		name        string
+		tempStorage map[string]string
+		url         string
+		length      int
+	}{
+		{name: "Тест 1 - успех", tempStorage: map[string]string{}, url: "testKey", length: 1},
+		{name: "Тест 2 - уже существует - успех", tempStorage: map[string]string{"testKey": "testValue"}, url: "testValue", length: 1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &inMemoryStore{
+				tempStorage: tt.tempStorage,
+			}
+			s.Set(tt.url)
+			assert.Len(t, s.tempStorage, tt.length, "Длина словаря не совпадает")
+		})
+	}
+}
