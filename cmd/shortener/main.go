@@ -28,7 +28,7 @@ func run() (*server.App, error) {
 	var storage storage.OperationStorager
 	var err error
 
-	options := config.CreateOptions()
+	options := config.NewOptions()
 
 	storage, err = inmemorystore.NewStorage(options)
 	if err != nil {
