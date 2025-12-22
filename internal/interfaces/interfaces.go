@@ -9,10 +9,11 @@ type Storager interface {
 
 type ShortenerServicer interface {
 	GetURLByKey(key string) (string, error)
-	GenerateShortURL(URL string) (string, error)
+	GenerateShortURL(URL string, host string) (string, error)
 }
 
 type ShortenerHandler interface {
 	GenerateShortKeyHandler(w http.ResponseWriter, r *http.Request)
 	GetURLByKeyHandler(w http.ResponseWriter, r *http.Request)
+	JSONGenerateShortkeyHandler(w http.ResponseWriter, r *http.Request)
 }

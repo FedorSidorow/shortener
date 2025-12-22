@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"net/url"
 
 	"github.com/FedorSidorow/shortener/internal/interfaces"
 	"github.com/FedorSidorow/shortener/internal/shortenererrors"
@@ -18,15 +19,21 @@ func NewShortenerService(storage interfaces.Storager) *ShortenerService {
 	}
 }
 
-func (svc *ShortenerService) GenerateShortURL(url string) (string, error) {
-	key, err := svc.storage.Set(url)
+func (svc *ShortenerService) GenerateShortURL(urlString string, host string) (string, error) {
+	key, err := svc.storage.Set(urlString)
 	if err != nil {
 		if errors.Is(err, shortenererrors.ErrorCantCreateShortURL) {
 			return "", fmt.Errorf("ошибка хранилища данных - не удалось сгенерировать ключ которого нет в хранилище")
 		}
 		return "", fmt.Errorf("ошибка сервиса")
 	}
-	return key, nil
+
+	shortURL, err := url.JoinPath("http://", host, key)
+	if err != nil {
+		return "", fmt.Errorf("ошибка сервиса")
+	}
+
+	return shortURL, nil
 }
 
 func (svc *ShortenerService) GetURLByKey(key string) (string, error) {

@@ -15,6 +15,7 @@ func InitRouter(handler interfaces.ShortenerHandler) *chi.Mux {
 		r.Use(logger.LogRequest)
 		r.Post("/", handler.GenerateShortKeyHandler)
 		r.Get("/*", handler.GetURLByKeyHandler)
+		r.Post("/api/shorten", handler.JSONGenerateShortkeyHandler)
 	})
 	return router
 }
