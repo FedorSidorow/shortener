@@ -5,29 +5,14 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/FedorSidorow/shortener/internal/shortenererrors"
+	"github.com/FedorSidorow/shortener/internal/models"
 )
 
-type JsonShortenRequest struct {
-	URL string `json:"url"`
-}
-
-type JsonShortenResponse struct {
-	Result string `json:"result"`
-}
-
-func (req *JsonShortenRequest) isValid() error {
-	if req.URL == "" {
-		return &shortenererrors.ValidationError{Field: "url", Msg: "пустая строка"}
-	}
-	return nil
-}
-
-func PostShortURLUnmarshalBody(req *http.Request) (*JsonShortenRequest, error) {
+func PostShortURLUnmarshalBody(req *http.Request) (*models.JSONShortenRequest, error) {
 
 	defer req.Body.Close()
 
-	var data JsonShortenRequest
+	var data models.JSONShortenRequest
 	var buf bytes.Buffer
 	_, err := buf.ReadFrom(req.Body)
 
@@ -39,20 +24,11 @@ func PostShortURLUnmarshalBody(req *http.Request) (*JsonShortenRequest, error) {
 		return nil, err
 	}
 
-	err = data.isValid()
+	err = data.IsValid()
 
 	if err != nil {
 		return nil, err
 	}
 
 	return &data, nil
-}
-
-func PostShortURLMarshalBody(data *JsonShortenResponse) (*[]byte, error) {
-
-	bytesToReturn, err := json.Marshal(data)
-	if err != nil {
-		return nil, err
-	}
-	return &bytesToReturn, nil
 }

@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
 	"log"
 	"net/http"
 
 	"github.com/FedorSidorow/shortener/internal/interfaces"
+	"github.com/FedorSidorow/shortener/internal/models"
 	"github.com/FedorSidorow/shortener/internal/serializers"
 	"github.com/FedorSidorow/shortener/internal/shortenererrors"
 	"github.com/go-chi/chi/v5"
@@ -71,8 +73,8 @@ func (h *APIHandler) GetURLByKeyHandler(res http.ResponseWriter, req *http.Reque
 func (h *APIHandler) JSONGenerateShortkeyHandler(res http.ResponseWriter, req *http.Request) {
 
 	var (
-		data          *serializers.JsonShortenRequest
-		responseData  serializers.JsonShortenResponse
+		data          *models.JSONShortenRequest
+		responseData  models.JSONShortenResponse
 		err           error
 		validationErr *shortenererrors.ValidationError
 	)
@@ -99,14 +101,14 @@ func (h *APIHandler) JSONGenerateShortkeyHandler(res http.ResponseWriter, req *h
 	}
 	responseData.Result = shortURL
 
-	response, err := serializers.PostShortURLMarshalBody(&responseData)
+	response, err := json.Marshal(responseData)
 	if err != nil {
-		log.Printf("error while marshal: %s\n", err)
+		log.Printf("error while serializing: %s\n", err)
 		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusCreated)
-	res.Write(*response)
+	res.Write(response)
 }
