@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"time"
+
 	"go.uber.org/zap"
 )
 
@@ -25,4 +27,16 @@ func Initialize(level string) error {
 	Log = zl
 
 	return nil
+}
+
+func DurationField(s string, duration time.Duration) zap.Field {
+	return zap.Duration(s, duration)
+}
+
+func StringField(s1, s2 string) zap.Field {
+	return zap.String(s1, s2)
+}
+
+func IntField(s string, val int) zap.Field {
+	return zap.Int(s, val)
 }
