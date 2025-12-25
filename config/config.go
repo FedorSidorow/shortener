@@ -9,6 +9,7 @@ import (
 type Options struct {
 	A string
 	B string
+	F string
 }
 
 func NewOptions() *Options {
@@ -24,6 +25,8 @@ func (options *Options) setValuesFromFlags() {
 	log.Printf("flags: флаг а - %s\n", options.A)
 	flag.StringVar(&options.B, "b", "", "отвечает за базовый адрес результирующего сокращённого URL")
 	log.Printf("flags: флаг б - %s\n", options.B)
+	flag.StringVar(&options.F, "f", "", "полное имя файла, куда сохраняются данные в формате JSON")
+	log.Printf("flags: флаг f - %s\n", options.F)
 	flag.Parse()
 }
 
@@ -35,5 +38,9 @@ func (options *Options) setValuesFromEnv() {
 	if baseURL := os.Getenv("BASE_URL"); baseURL != "" {
 		options.B = baseURL
 		log.Printf("env: флаг б - %s\n", options.B)
+	}
+	if fileStoragePath := os.Getenv("FILE_STORAGE_PATH"); fileStoragePath != "" {
+		options.F = fileStoragePath
+		log.Printf("env: флаг f - %s\n", options.F)
 	}
 }
