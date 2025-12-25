@@ -30,8 +30,10 @@ func NewStorage(options *config.Options) (*inMemoryStore, error) {
 	s := &inMemoryStore{}
 	s.tempStorage = make(map[string]string, 0)
 	s.toReturn = options.B
+	s.filePath = options.F
 
 	if options.F != "" {
+		log.Printf("Файл для хранения - %s\n", options.F)
 		file, err := os.Open(options.F)
 		if err != nil {
 			if err = os.WriteFile(options.F, []byte(""), 0644); err != nil {
