@@ -5,6 +5,7 @@ import (
 
 	"github.com/FedorSidorow/shortener/config"
 	"github.com/FedorSidorow/shortener/internal/handler"
+	"github.com/FedorSidorow/shortener/internal/logger"
 	"github.com/FedorSidorow/shortener/internal/server"
 	"github.com/FedorSidorow/shortener/internal/service"
 	"github.com/FedorSidorow/shortener/internal/storage"
@@ -28,7 +29,11 @@ func run() (*server.App, error) {
 	var storage storage.OperationStorager
 	var err error
 
-	options := config.CreateOptions()
+	options := config.NewOptions()
+
+	if err = logger.Initialize("info"); err != nil {
+		return nil, err
+	}
 
 	storage, err = inmemorystore.NewStorage(options)
 	if err != nil {

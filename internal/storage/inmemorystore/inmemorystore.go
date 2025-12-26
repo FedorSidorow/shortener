@@ -1,8 +1,11 @@
 package inmemorystore
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/FedorSidorow/shortener/config"
@@ -13,15 +16,76 @@ import (
 type inMemoryStore struct {
 	tempStorage map[string]string
 	toReturn    string
+	filePath    string
+}
+
+type record struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 func NewStorage(options *config.Options) (*inMemoryStore, error) {
 	log.Printf("Инициализация хранилища в памяти \n")
 	log.Printf("Ключ для получения - %s\n", options.B)
 	s := &inMemoryStore{}
-	s.tempStorage = make(map[string]string, 10)
+	s.tempStorage = make(map[string]string, 0)
 	s.toReturn = options.B
+	s.filePath = options.F
+
+	if options.F != "" {
+		log.Printf("Файл для хранения - %s\n", options.F)
+		file, err := os.Open(options.F)
+		if err != nil {
+			if err = os.WriteFile(options.F, []byte(""), 0644); err != nil {
+				return nil, fmt.Errorf("ошибка создания файла: %w", err)
+			}
+		} else {
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				line := scanner.Text()
+				if line == "" {
+					continue
+				}
+				var rec record
+				if err := json.Unmarshal([]byte(line), &rec); err != nil {
+					log.Printf("Пропущена некорректная строка: %s", line)
+					continue
+				}
+				s.tempStorage[rec.Key] = rec.Value
+			}
+			if err := scanner.Err(); err != nil {
+				file.Close()
+				return nil, fmt.Errorf("ошибка чтения файла: %w", err)
+			}
+			file.Close()
+		}
+	}
+
 	return s, nil
+}
+
+func (s *inMemoryStore) writeInFile(rec record) error {
+	data, err := json.Marshal(rec)
+	if err != nil {
+		return fmt.Errorf("ошибка сериализации записи: %w", err)
+	}
+
+	file, err := os.OpenFile(s.filePath, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("ошибка открытия файла для записи: %w", err)
+	}
+
+	_, err = file.WriteString(string(data) + "\n")
+	if err != nil {
+		file.Close()
+		return fmt.Errorf("ошибка записи в файл: %w", err)
+	}
+
+	err = file.Close()
+	if err != nil {
+		return fmt.Errorf("ошибка закрытия файла: %w", err)
+	}
+	return nil
 }
 
 func (s *inMemoryStore) Set(url string) (string, error) {
@@ -40,6 +104,9 @@ func (s *inMemoryStore) Set(url string) (string, error) {
 			_, ok := s.tempStorage[toReturn]
 			if !ok {
 				s.tempStorage[toReturn] = url
+				if s.filePath != "" {
+					s.writeInFile(record{})
+				}
 				return toReturn, nil
 			}
 		}
@@ -49,6 +116,9 @@ func (s *inMemoryStore) Set(url string) (string, error) {
 		// При заданом значении всегда устанавливаем в него
 		toReturn = s.toReturn
 		s.tempStorage[toReturn] = url
+		if s.filePath != "" {
+			s.writeInFile(record{})
+		}
 	}
 
 	return toReturn, nil
