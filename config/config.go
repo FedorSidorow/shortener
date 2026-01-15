@@ -46,7 +46,7 @@ func (options *Options) setValuesFromEnv() {
 		options.F = fileStoragePath
 		log.Printf("env: флаг f - %s\n", options.F)
 	}
-	if dbStoragePath := os.Getenv("FILE_STORAGE_PATH"); dbStoragePath != "" {
+	if dbStoragePath := os.Getenv("DATABASE_DSN"); dbStoragePath != "" {
 		options.D = dbStoragePath
 		log.Printf("env: флаг d - %s\n", options.D)
 	}
