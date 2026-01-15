@@ -47,7 +47,9 @@ func (s *dbStore) Close() error {
 }
 
 func (s *dbStore) Ping() error {
+	log.Print("Хранилище БД. Проверка состояния.")
 	if err := s.db.Ping(); err != nil {
+		log.Printf("Хранилище БД. Ошибка - %s", err)
 		return err
 	}
 

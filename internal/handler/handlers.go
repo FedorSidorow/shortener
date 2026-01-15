@@ -114,6 +114,7 @@ func (h *APIHandler) JSONGenerateShortkeyHandler(res http.ResponseWriter, req *h
 }
 
 func (h *APIHandler) PingDB(res http.ResponseWriter, req *http.Request) {
+	log.Print("Проверка состояния подключения к БД")
 	if ok := h.shortService.PingStorage(); !ok {
 		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
