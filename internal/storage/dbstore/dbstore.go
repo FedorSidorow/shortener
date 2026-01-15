@@ -28,7 +28,11 @@ func NewStorage(options *config.Options) (*dbStore, error) {
 	}
 
 	s.db = db
-	db.PingContext(context.Background())
+
+	if err := db.PingContext(context.Background()); err != nil {
+		log.Printf("Ping failed: %s", err)
+		return nil, err
+	}
 
 	return s, nil
 }
