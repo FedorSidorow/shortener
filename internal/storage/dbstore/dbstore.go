@@ -1,6 +1,7 @@
 package dbstore
 
 import (
+	"context"
 	"database/sql"
 	"log"
 
@@ -27,6 +28,7 @@ func NewStorage(options *config.Options) (*dbStore, error) {
 	}
 
 	s.db = db
+	db.PingContext(context.Background())
 
 	return s, nil
 }
