@@ -140,3 +140,11 @@ func (s *inMemoryStore) Get(key string) (string, error) {
 	}
 	return fullURL, nil
 }
+
+func (s *inMemoryStore) Ping() error {
+	return shortenererrors.ErrorDBConnection
+}
+
+func (s *inMemoryStore) Close() error {
+	return nil
+}

@@ -43,3 +43,10 @@ func (svc *ShortenerService) GetURLByKey(key string) (string, error) {
 	}
 	return url, nil
 }
+
+func (svc *ShortenerService) PingStorage() bool {
+	if err := svc.storage.Ping(); err != nil {
+		return false
+	}
+	return true
+}

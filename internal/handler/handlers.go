@@ -112,3 +112,12 @@ func (h *APIHandler) JSONGenerateShortkeyHandler(res http.ResponseWriter, req *h
 	res.WriteHeader(http.StatusCreated)
 	res.Write(response)
 }
+
+func (h *APIHandler) PingDB(res http.ResponseWriter, req *http.Request) {
+	if ok := h.shortService.PingStorage(); !ok {
+		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	res.WriteHeader(http.StatusOK)
+}
