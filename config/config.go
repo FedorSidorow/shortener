@@ -22,6 +22,7 @@ func NewOptions() *Options {
 }
 
 func (options *Options) setValuesFromFlags() {
+	log.Printf("Поиск флагов")
 	flag.StringVar(&options.A, "a", ":8080", "адрес запуска HTTP-сервера")
 	log.Printf("flags: флаг а - %s\n", options.A)
 	flag.StringVar(&options.B, "b", "", "отвечает за базовый адрес результирующего сокращённого URL")
@@ -34,6 +35,7 @@ func (options *Options) setValuesFromFlags() {
 }
 
 func (options *Options) setValuesFromEnv() {
+	log.Printf("Поиск переменных окружения (перезапись флагов если существуют)")
 	if envRunAddr := os.Getenv("SERVER_ADDRESS"); envRunAddr != "" {
 		options.A = envRunAddr
 		log.Printf("env: флаг а - %s\n", options.A)

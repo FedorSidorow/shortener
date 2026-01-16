@@ -11,7 +11,8 @@ import (
 )
 
 type dbStore struct {
-	db *sql.DB
+	db        *sql.DB
+	dbConnect string
 }
 
 func NewStorage(options *config.Options) (*dbStore, error) {
@@ -28,6 +29,7 @@ func NewStorage(options *config.Options) (*dbStore, error) {
 	}
 
 	s.db = db
+	s.dbConnect = options.D
 
 	if err := db.PingContext(context.Background()); err != nil {
 		log.Printf("Ping failed: %s", err)
@@ -48,6 +50,10 @@ func (s *dbStore) Close() error {
 
 func (s *dbStore) Ping() error {
 	log.Print("Хранилище БД. Проверка состояния.")
+	if s.dbConnect != "" {
+		return nil
+	}
+
 	if err := s.db.Ping(); err != nil {
 		log.Printf("Хранилище БД. Ошибка - %s", err)
 		return err
