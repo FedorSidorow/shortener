@@ -52,6 +52,11 @@ func NewStorage(options *config.Options) (*dbStore, error) {
 		return nil, err
 	}
 
+	if err := s.db.Ping(); err != nil {
+		log.Printf("Хранилище БД. Ошибка - %s", err)
+		return nil, err
+	}
+
 	return s, nil
 }
 
