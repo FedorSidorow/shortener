@@ -35,11 +35,11 @@ func (s *dbStore) migration() error {
 
 func NewStorage(options *config.Options) (*dbStore, error) {
 	log.Printf("Инициализация подключения к БД \n")
-	log.Printf("Строка подключения: %s\n", string([]byte(options.D)))
+	log.Printf("Строка подключения: %s\n", options.D)
 
 	var (
 		s       = &dbStore{}
-		db, err = sql.Open("pgx", string([]byte(options.D)))
+		db, err = sql.Open("pgx", options.D)
 	)
 
 	if err != nil {
