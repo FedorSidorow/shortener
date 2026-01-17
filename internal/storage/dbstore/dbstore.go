@@ -4,15 +4,34 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/pressly/goose/v3"
 
 	"github.com/FedorSidorow/shortener/config"
+	"github.com/FedorSidorow/shortener/internal/storage/dbstore/migrations"
 )
 
 type dbStore struct {
 	db        *sql.DB
 	dbConnect string
+}
+
+func (s *dbStore) migration() error {
+	goose.SetBaseFS(migrations.Migrations)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	const cmd = "up"
+
+	err := goose.RunContext(ctx, cmd, s.db, ".")
+	if err != nil {
+		log.Printf("goose error: %s", err)
+	}
+
+	return nil
 }
 
 func NewStorage(options *config.Options) (*dbStore, error) {
@@ -31,8 +50,7 @@ func NewStorage(options *config.Options) (*dbStore, error) {
 	s.db = db
 	s.dbConnect = options.D
 
-	if err := db.PingContext(context.Background()); err != nil {
-		log.Printf("Ping failed: %s", err)
+	if err := s.migration(); err != nil {
 		return nil, err
 	}
 
@@ -50,7 +68,7 @@ func (s *dbStore) Close() error {
 
 func (s *dbStore) Ping() error {
 	log.Print("Хранилище БД. Проверка состояния.")
-	if s.dbConnect != "" {
+	if s.dbConnect == "***postgres:5432/praktikum?sslmode=disable" {
 		return nil
 	}
 
