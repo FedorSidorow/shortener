@@ -40,7 +40,6 @@ func run() (*server.App, error) {
 		log.Printf("run app fail with storage init: %s\n", err)
 		return nil, err
 	}
-	defer s.Close()
 
 	newService := service.NewShortenerService(s)
 
