@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"strings"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -74,6 +75,8 @@ func (s *dbStore) Ping() error {
 	log.Print("Хранилище БД. Проверка состояния.")
 	log.Printf("s.dbConnect = %s", s.dbConnect)
 	log.Printf("veryStrangeString = %s", veryStrangeString)
+	result := strings.Compare(s.dbConnect, veryStrangeString)
+	log.Printf("result = %d", result)
 	if s.dbConnect == veryStrangeString {
 		log.Printf("заглушка для ping")
 		return nil
