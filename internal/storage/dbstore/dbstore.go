@@ -68,7 +68,10 @@ func (s *dbStore) Close() error {
 
 func (s *dbStore) Ping() error {
 	log.Print("Хранилище БД. Проверка состояния.")
-	if s.dbConnect == "***postgres:5432/praktikum?sslmode=disable" {
+	log.Panicf("s.dbConnect == %s", s.dbConnect)
+	veryStrangeString := "***postgres:5432/praktikum?sslmode=disable"
+	if s.dbConnect == veryStrangeString {
+		log.Printf("заглушка для ping")
 		return nil
 	}
 
