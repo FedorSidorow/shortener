@@ -52,7 +52,7 @@ func NewStorage(options *config.Options) (*dbStore, error) {
 	s.db = db
 	s.dbConnect = options.D
 
-	if s.dbConnect != veryStrangeString {
+	if options.D != veryStrangeString {
 		if err := s.migration(); err != nil {
 			return nil, err
 		}
@@ -72,6 +72,8 @@ func (s *dbStore) Close() error {
 
 func (s *dbStore) Ping() error {
 	log.Print("Хранилище БД. Проверка состояния.")
+	log.Printf("s.dbConnect = %s", s.dbConnect)
+	log.Printf("veryStrangeString = %s", veryStrangeString)
 	if s.dbConnect == veryStrangeString {
 		log.Printf("заглушка для ping")
 		return nil
