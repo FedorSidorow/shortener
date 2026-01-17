@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"log"
-	"strings"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -15,11 +14,8 @@ import (
 )
 
 type dbStore struct {
-	db        *sql.DB
-	dbConnect string
+	db *sql.DB
 }
-
-const veryStrangeString = "***postgres:5432/praktikum?sslmode=disable"
 
 func (s *dbStore) migration() error {
 	goose.SetBaseFS(migrations.Migrations)
@@ -39,11 +35,11 @@ func (s *dbStore) migration() error {
 
 func NewStorage(options *config.Options) (*dbStore, error) {
 	log.Printf("Инициализация подключения к БД \n")
-	log.Printf("Строка подключения: %s\n", options.D)
+	log.Printf("Строка подключения: %s\n", string([]byte(options.D)))
 
 	var (
 		s       = &dbStore{}
-		db, err = sql.Open("pgx", options.D)
+		db, err = sql.Open("pgx", string([]byte(options.D)))
 	)
 
 	if err != nil {
@@ -51,12 +47,9 @@ func NewStorage(options *config.Options) (*dbStore, error) {
 	}
 
 	s.db = db
-	s.dbConnect = options.D
 
-	if options.D != veryStrangeString {
-		if err := s.migration(); err != nil {
-			return nil, err
-		}
+	if err := s.migration(); err != nil {
+		return nil, err
 	}
 
 	return s, nil
@@ -73,14 +66,6 @@ func (s *dbStore) Close() error {
 
 func (s *dbStore) Ping() error {
 	log.Print("Хранилище БД. Проверка состояния.")
-	log.Printf("s.dbConnect bytes: %v", []byte(s.dbConnect))
-	log.Printf("veryStrangeString bytes: %v", []byte(veryStrangeString))
-	result := strings.Compare(s.dbConnect, veryStrangeString)
-	log.Printf("result = %d", result)
-	if s.dbConnect == veryStrangeString {
-		log.Printf("заглушка для ping")
-		return nil
-	}
 	if err := s.db.Ping(); err != nil {
 		log.Printf("Хранилище БД. Ошибка - %s", err)
 		return err
