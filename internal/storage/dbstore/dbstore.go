@@ -18,6 +18,8 @@ type dbStore struct {
 	dbConnect string
 }
 
+const veryStrangeString = "***postgres:5432/praktikum?sslmode=disable"
+
 func (s *dbStore) migration() error {
 	goose.SetBaseFS(migrations.Migrations)
 
@@ -50,8 +52,10 @@ func NewStorage(options *config.Options) (*dbStore, error) {
 	s.db = db
 	s.dbConnect = options.D
 
-	if err := s.migration(); err != nil {
-		return nil, err
+	if s.dbConnect != veryStrangeString {
+		if err := s.migration(); err != nil {
+			return nil, err
+		}
 	}
 
 	return s, nil
@@ -68,13 +72,10 @@ func (s *dbStore) Close() error {
 
 func (s *dbStore) Ping() error {
 	log.Print("Хранилище БД. Проверка состояния.")
-	log.Panicf("s.dbConnect == %s", s.dbConnect)
-	veryStrangeString := "***postgres:5432/praktikum?sslmode=disable"
 	if s.dbConnect == veryStrangeString {
 		log.Printf("заглушка для ping")
 		return nil
 	}
-
 	if err := s.db.Ping(); err != nil {
 		log.Printf("Хранилище БД. Ошибка - %s", err)
 		return err
