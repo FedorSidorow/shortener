@@ -23,6 +23,5 @@ func NewStorage(options *config.Options) (interfaces.Storager, error) {
 			return nil, err
 		}
 	}
-	defer storage.Close()
 	return storage, nil
 }
