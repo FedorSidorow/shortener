@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: myapp_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - shortener_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d myapp_db"]
+      start_period: 10s
+      interval: 10s
+      timeout: 45s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:9.7.0
+    container_name: pgadmin_web
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "7080:80"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    volumes:
+      - shortener_pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  shortener_postgres_data:
+  shortener_pgadmin_data:
