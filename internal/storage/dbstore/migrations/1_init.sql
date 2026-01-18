@@ -1,6 +1,6 @@
 -- +goose Up
 -- +goose StatementBegin
-CREATE SCHEMA content;
+CREATE SCHEMA IF NOT EXISTS content;
 -- +goose StatementEnd
 
 -- +goose Down
