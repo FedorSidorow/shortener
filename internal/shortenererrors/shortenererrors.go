@@ -6,6 +6,7 @@ import (
 )
 
 var ErrorCantCreateShortURL = errors.New("не удалось сгенерировать ключ которого нет в хранилище")
+var ErrorDBConnection = errors.New("нет соединения с БД")
 
 type ValidationError struct {
 	Field string
