@@ -122,3 +122,36 @@ func (h *APIHandler) PingDB(res http.ResponseWriter, req *http.Request) {
 
 	res.WriteHeader(http.StatusOK)
 }
+
+func (h *APIHandler) ListJSONGenerateShortkeyHandler(res http.ResponseWriter, req *http.Request) {
+	var (
+		validationErr *shortenererrors.ValidationError
+		ctx           = req.Context()
+	)
+
+	data, err := serializers.ListPostShortURLUnmarshalBody(req)
+	if err != nil {
+		switch {
+		case errors.As(err, &validationErr):
+			log.Printf("validation error: %s\n", err)
+			http.Error(res, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		default:
+			log.Printf("error in PostShortURLUnmarshalBody: %s\n", err)
+			http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	responseData, err := h.shortService.ListGenerateShortURL(ctx, data, req.Host)
+	response, err := json.Marshal(responseData)
+	if err != nil {
+		log.Printf("error while serializing: %s\n", err)
+		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(http.StatusCreated)
+	res.Write(response)
+}

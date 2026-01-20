@@ -1,11 +1,13 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
 
 	"github.com/FedorSidorow/shortener/internal/interfaces"
+	"github.com/FedorSidorow/shortener/internal/models"
 	"github.com/FedorSidorow/shortener/internal/shortenererrors"
 )
 
@@ -49,4 +51,23 @@ func (svc *ShortenerService) PingStorage() bool {
 		return false
 	}
 	return true
+}
+
+func (svc *ShortenerService) ListGenerateShortURL(ctx context.Context, data []models.ListJSONShortenRequest, host string) ([]models.ListJSONShortenResponse, error) {
+	toReturnData, err := svc.storage.ListSet(ctx, data)
+	if err != nil {
+		if errors.Is(err, shortenererrors.ErrorCantCreateShortURL) {
+			return nil, fmt.Errorf("ошибка хранилища данных - не удалось сгенерировать ключ которого нет в хранилище")
+		}
+		return nil, fmt.Errorf("ошибка сервиса")
+	}
+
+	for i := range toReturnData {
+		toReturnData[i].ShortURL, err = url.JoinPath("http://", host, toReturnData[i].ShortURL)
+		if err != nil {
+			return nil, fmt.Errorf("ошибка сервиса")
+		}
+	}
+
+	return toReturnData, nil
 }
