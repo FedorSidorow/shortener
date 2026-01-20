@@ -144,6 +144,12 @@ func (h *APIHandler) ListJSONGenerateShortkeyHandler(res http.ResponseWriter, re
 	}
 
 	responseData, err := h.shortService.ListGenerateShortURL(ctx, data, req.Host)
+	if err != nil {
+		log.Printf("error while creating rows: %s\n", err)
+		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
 	response, err := json.Marshal(responseData)
 	if err != nil {
 		log.Printf("error while serializing: %s\n", err)
