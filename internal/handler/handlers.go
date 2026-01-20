@@ -47,6 +47,12 @@ func (h *APIHandler) GenerateShortKeyHandler(res http.ResponseWriter, req *http.
 
 	shortURL, err := h.shortService.GenerateShortURL(string(urlToShort), req.Host)
 	if err != nil {
+		if errors.Is(err, shortenererrors.ErrorURLAlreadyExists) {
+			res.Header().Set("content-type", "text/plain")
+			res.WriteHeader(http.StatusConflict)
+			res.Write([]byte(shortURL))
+			return
+		}
 		log.Printf("error while generate short URL: %s\n", err)
 		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -108,6 +114,7 @@ func (h *APIHandler) JSONGenerateShortkeyHandler(res http.ResponseWriter, req *h
 			res.Header().Set("Content-Type", "application/json")
 			res.WriteHeader(http.StatusConflict)
 			res.Write(response)
+			return
 		default:
 			log.Printf("error while generate short URL: %s\n", err)
 			http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
