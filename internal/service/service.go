@@ -27,7 +27,7 @@ func (svc *ShortenerService) GenerateShortURL(urlString string, host string) (st
 		if errors.Is(err, shortenererrors.ErrorCantCreateShortURL) {
 			return "", fmt.Errorf("ошибка хранилища данных - не удалось сгенерировать ключ которого нет в хранилище")
 		}
-		if errors.Is(err, shortenererrors.URLAlreadyExists) {
+		if errors.Is(err, shortenererrors.ErrorURLAlreadyExists) {
 			shortURL, joinerr := url.JoinPath("http://", host, key)
 			if joinerr != nil {
 				return "", fmt.Errorf("ошибка сервиса")

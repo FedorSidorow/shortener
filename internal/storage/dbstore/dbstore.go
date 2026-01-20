@@ -97,7 +97,7 @@ func (s *dbStore) Set(url string) (string, error) {
 
 	err := s.db.QueryRowContext(ctx, queryCheck, url).Scan(&toReturn)
 	if err == nil {
-		return toReturn, shortenererrors.URLAlreadyExists
+		return toReturn, shortenererrors.ErrorURLAlreadyExists
 	}
 
 	const query = "INSERT INTO content.shorturl (short_key, full_url) VALUES ($1, $2)"

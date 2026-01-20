@@ -96,7 +96,7 @@ func (h *APIHandler) JSONGenerateShortkeyHandler(res http.ResponseWriter, req *h
 	shortURL, err := h.shortService.GenerateShortURL(data.URL, req.Host)
 	if err != nil {
 		switch {
-		case errors.Is(err, shortenererrors.URLAlreadyExists):
+		case errors.Is(err, shortenererrors.ErrorURLAlreadyExists):
 			responseData.Result = shortURL
 			response, err := json.Marshal(responseData)
 			if err != nil {

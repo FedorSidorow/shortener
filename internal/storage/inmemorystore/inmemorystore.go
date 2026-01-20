@@ -96,7 +96,7 @@ func (s *inMemoryStore) Set(url string) (string, error) {
 		// поиск вдруг такое значение уже установлено
 		for key, value := range s.tempStorage {
 			if value == url {
-				return key, shortenererrors.URLAlreadyExists
+				return key, shortenererrors.ErrorURLAlreadyExists
 			}
 		}
 
