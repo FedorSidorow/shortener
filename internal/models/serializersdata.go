@@ -16,3 +16,20 @@ func (req *JSONShortenRequest) IsValid() error {
 	}
 	return nil
 }
+
+type ListJSONShortenRequest struct {
+	CorrelationID string `json:"correlation_id,omitempty"`
+	OriginalURL   string `json:"original_url,omitempty"`
+}
+
+type ListJSONShortenResponse struct {
+	CorrelationID string `json:"correlation_id,omitempty"`
+	ShortURL      string `json:"short_url,omitempty"`
+}
+
+func (req *ListJSONShortenRequest) IsValid() error {
+	if req.CorrelationID == "" || req.OriginalURL == "" {
+		return &shortenererrors.ValidationError{Field: "url", Msg: "пустая строка"}
+	}
+	return nil
+}
