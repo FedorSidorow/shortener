@@ -5,11 +5,11 @@ import (
 
 	"github.com/FedorSidorow/shortener/config"
 	"github.com/FedorSidorow/shortener/internal/handler"
+	"github.com/FedorSidorow/shortener/internal/interfaces"
 	"github.com/FedorSidorow/shortener/internal/logger"
 	"github.com/FedorSidorow/shortener/internal/server"
 	"github.com/FedorSidorow/shortener/internal/service"
 	"github.com/FedorSidorow/shortener/internal/storage"
-	"github.com/FedorSidorow/shortener/internal/storage/inmemorystore"
 )
 
 func main() {
@@ -26,7 +26,7 @@ func main() {
 }
 
 func run() (*server.App, error) {
-	var storage storage.OperationStorager
+	var s interfaces.Storager
 	var err error
 
 	options := config.NewOptions()
@@ -35,13 +35,13 @@ func run() (*server.App, error) {
 		return nil, err
 	}
 
-	storage, err = inmemorystore.NewStorage(options)
+	s, err = storage.NewStorage(options)
 	if err != nil {
 		log.Printf("run app fail with storage init: %s\n", err)
 		return nil, err
 	}
 
-	newService := service.NewShortenerService(storage)
+	newService := service.NewShortenerService(s)
 
 	handler, err := handler.NewHandler(newService)
 	if err != nil {

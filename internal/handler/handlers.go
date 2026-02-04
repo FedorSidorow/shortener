@@ -47,6 +47,12 @@ func (h *APIHandler) GenerateShortKeyHandler(res http.ResponseWriter, req *http.
 
 	shortURL, err := h.shortService.GenerateShortURL(string(urlToShort), req.Host)
 	if err != nil {
+		if errors.Is(err, shortenererrors.ErrorURLAlreadyExists) {
+			res.Header().Set("content-type", "text/plain")
+			res.WriteHeader(http.StatusConflict)
+			res.Write([]byte(shortURL))
+			return
+		}
 		log.Printf("error while generate short URL: %s\n", err)
 		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -95,11 +101,76 @@ func (h *APIHandler) JSONGenerateShortkeyHandler(res http.ResponseWriter, req *h
 
 	shortURL, err := h.shortService.GenerateShortURL(data.URL, req.Host)
 	if err != nil {
-		log.Printf("error while generate short URL: %s\n", err)
+		switch {
+		case errors.Is(err, shortenererrors.ErrorURLAlreadyExists):
+			responseData.Result = shortURL
+			response, err := json.Marshal(responseData)
+			if err != nil {
+				log.Printf("error while serializing: %s\n", err)
+				http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+
+			res.Header().Set("Content-Type", "application/json")
+			res.WriteHeader(http.StatusConflict)
+			res.Write(response)
+			return
+		default:
+			log.Printf("error while generate short URL: %s\n", err)
+			http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
+	responseData.Result = shortURL
+
+	response, err := json.Marshal(responseData)
+	if err != nil {
+		log.Printf("error while serializing: %s\n", err)
 		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	responseData.Result = shortURL
+
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(http.StatusCreated)
+	res.Write(response)
+}
+
+func (h *APIHandler) PingDB(res http.ResponseWriter, req *http.Request) {
+	log.Print("Проверка состояния подключения к БД")
+	if ok := h.shortService.PingStorage(); !ok {
+		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	res.WriteHeader(http.StatusOK)
+}
+
+func (h *APIHandler) ListJSONGenerateShortkeyHandler(res http.ResponseWriter, req *http.Request) {
+	var (
+		validationErr *shortenererrors.ValidationError
+		ctx           = req.Context()
+	)
+
+	data, err := serializers.ListPostShortURLUnmarshalBody(req)
+	if err != nil {
+		switch {
+		case errors.As(err, &validationErr):
+			log.Printf("validation error: %s\n", err)
+			http.Error(res, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		default:
+			log.Printf("error in PostShortURLUnmarshalBody: %s\n", err)
+			http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	responseData, err := h.shortService.ListGenerateShortURL(ctx, data, req.Host)
+	if err != nil {
+		log.Printf("error while creating rows: %s\n", err)
+		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 
 	response, err := json.Marshal(responseData)
 	if err != nil {

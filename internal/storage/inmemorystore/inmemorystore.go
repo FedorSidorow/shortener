@@ -2,6 +2,7 @@ package inmemorystore
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -9,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/FedorSidorow/shortener/config"
+	"github.com/FedorSidorow/shortener/internal/models"
 	"github.com/FedorSidorow/shortener/internal/shortenererrors"
 	"github.com/FedorSidorow/shortener/internal/utils"
 )
@@ -94,7 +96,7 @@ func (s *inMemoryStore) Set(url string) (string, error) {
 		// поиск вдруг такое значение уже установлено
 		for key, value := range s.tempStorage {
 			if value == url {
-				return key, nil
+				return key, shortenererrors.ErrorURLAlreadyExists
 			}
 		}
 
@@ -139,4 +141,44 @@ func (s *inMemoryStore) Get(key string) (string, error) {
 		return "", fmt.Errorf("такого ключа нет")
 	}
 	return fullURL, nil
+}
+
+func (s *inMemoryStore) Ping() error {
+	return shortenererrors.ErrorDBConnection
+}
+
+func (s *inMemoryStore) Close() error {
+	return nil
+}
+
+func (s *inMemoryStore) ListSet(ctx context.Context, data []models.ListJSONShortenRequest) ([]models.ListJSONShortenResponse, error) {
+	toReturnData := make([]models.ListJSONShortenResponse, len(data))
+
+	for key, value := range data {
+		toReturnData[key].CorrelationID = value.CorrelationID
+		// поиск вдруг такое значение уже установлено
+		for k, v := range s.tempStorage {
+			if v == value.OriginalURL {
+				toReturnData[key].ShortURL = k
+			}
+		}
+
+		// Установка в случайный ключ
+		for counter := 1; counter < 10; counter++ {
+			shortenKey := utils.GetRandomString(6)
+			_, ok := s.tempStorage[shortenKey]
+			if !ok {
+				s.tempStorage[shortenKey] = value.OriginalURL
+				if s.filePath != "" {
+					s.writeInFile(record{})
+				}
+				toReturnData[key].ShortURL = shortenKey
+			}
+			if counter == 9 {
+				return nil, shortenererrors.ErrorCantCreateShortURL
+			}
+		}
+	}
+
+	return toReturnData, nil
 }
