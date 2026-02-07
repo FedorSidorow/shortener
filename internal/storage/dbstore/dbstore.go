@@ -88,7 +88,7 @@ func (s *dbStore) Ping() error {
 	return nil
 }
 
-func (s *dbStore) Set(url string) (string, error) {
+func (s *dbStore) Set(url string, userID uuid.UUID) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -101,12 +101,12 @@ func (s *dbStore) Set(url string) (string, error) {
 		return toReturn, shortenererrors.ErrorURLAlreadyExists
 	}
 
-	const query = "INSERT INTO content.shorturl (short_key, full_url) VALUES ($1, $2)"
+	const query = "INSERT INTO content.shorturl (short_key, full_url, user_id) VALUES ($1, $2, $3)"
 
 	// Установка в случайный ключ
 	for counter := 1; counter < 10; counter++ {
 		toReturn = utils.GetRandomString(6)
-		_, err := s.db.ExecContext(ctx, query, toReturn, url)
+		_, err := s.db.ExecContext(ctx, query, toReturn, url, userID)
 		if err == nil {
 			return toReturn, nil
 		}

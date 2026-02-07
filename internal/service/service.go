@@ -22,8 +22,8 @@ func NewShortenerService(storage interfaces.Storager) *ShortenerService {
 	}
 }
 
-func (svc *ShortenerService) GenerateShortURL(urlString string, host string) (string, error) {
-	key, err := svc.storage.Set(urlString)
+func (svc *ShortenerService) GenerateShortURL(ctx context.Context, urlString string, host string, userID uuid.UUID) (string, error) {
+	key, err := svc.storage.Set(urlString, userID)
 	if err != nil {
 		if errors.Is(err, shortenererrors.ErrorCantCreateShortURL) {
 			return "", shortenererrors.ErrorCantCreateShortURL

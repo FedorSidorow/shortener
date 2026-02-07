@@ -9,7 +9,7 @@ import (
 )
 
 type Storager interface {
-	Set(url string) (string, error)
+	Set(url string, userID uuid.UUID) (string, error)
 	Get(key string) (string, error)
 	Ping() error
 	Close() error
@@ -19,7 +19,7 @@ type Storager interface {
 
 type ShortenerServicer interface {
 	GetURLByKey(key string) (string, error)
-	GenerateShortURL(URL string, host string) (string, error)
+	GenerateShortURL(ctx context.Context, URL string, host string, userID uuid.UUID) (string, error)
 	PingStorage() bool
 	ListGenerateShortURL(ctx context.Context, data []models.ListJSONShortenRequest, host string) ([]models.ListJSONShortenResponse, error)
 	GetListUserURLs(ctx context.Context, userID uuid.UUID, host string) ([]*models.UserListJSONShortenResponse, error)

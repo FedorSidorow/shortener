@@ -91,7 +91,7 @@ func (s *inMemoryStore) writeInFile(rec record) error {
 	return nil
 }
 
-func (s *inMemoryStore) Set(url string) (string, error) {
+func (s *inMemoryStore) Set(url string, userID uuid.UUID) (string, error) {
 	var toReturn string
 	if s.toReturn == "" {
 		// поиск вдруг такое значение уже установлено

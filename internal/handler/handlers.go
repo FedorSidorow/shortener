@@ -28,6 +28,10 @@ func NewHandler(service interfaces.ShortenerServicer) (h *APIHandler, err error)
 }
 
 func (h *APIHandler) GenerateShortKeyHandler(res http.ResponseWriter, req *http.Request) {
+
+	var ctx = req.Context()
+	defer req.Body.Close()
+
 	if req.URL.Path != "/" {
 		http.NotFound(res, req)
 		return
@@ -40,13 +44,18 @@ func (h *APIHandler) GenerateShortKeyHandler(res http.ResponseWriter, req *http.
 		return
 	}
 
-	req.Body.Close()
 	if string(urlToShort) == "" {
 		http.Error(res, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 
-	shortURL, err := h.shortService.GenerateShortURL(string(urlToShort), req.Host)
+	userID, ok := auth.UserIDFrom(ctx)
+	if !ok {
+		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	shortURL, err := h.shortService.GenerateShortURL(ctx, string(urlToShort), req.Host, userID)
 	if err != nil {
 		if errors.Is(err, shortenererrors.ErrorURLAlreadyExists) {
 			res.Header().Set("content-type", "text/plain")
