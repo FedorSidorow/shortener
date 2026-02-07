@@ -40,3 +40,7 @@ func StringField(s1, s2 string) zap.Field {
 func IntField(s string, val int) zap.Field {
 	return zap.Int(s, val)
 }
+
+func ErrorField(err error) zap.Field {
+	return zap.NamedError("error", err)
+}

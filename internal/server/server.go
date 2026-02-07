@@ -40,7 +40,7 @@ func (app *App) Run() error {
 }
 
 func (app *App) createServer() (*http.Server, error) {
-	router := InitRouter(*app.shortenerAPI)
+	router := InitRouter(*app.shortenerAPI, app.options)
 	server := &http.Server{
 		Addr:    app.options.A,
 		Handler: router,

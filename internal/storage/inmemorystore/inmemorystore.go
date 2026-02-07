@@ -13,6 +13,7 @@ import (
 	"github.com/FedorSidorow/shortener/internal/models"
 	"github.com/FedorSidorow/shortener/internal/shortenererrors"
 	"github.com/FedorSidorow/shortener/internal/utils"
+	"github.com/google/uuid"
 )
 
 type inMemoryStore struct {
@@ -181,4 +182,8 @@ func (s *inMemoryStore) ListSet(ctx context.Context, data []models.ListJSONShort
 	}
 
 	return toReturnData, nil
+}
+
+func (s *inMemoryStore) GetList(ctx context.Context, userID uuid.UUID) ([]*models.UserListJSONShortenResponse, error) {
+	return []*models.UserListJSONShortenResponse{}, nil
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/FedorSidorow/shortener/internal/interfaces"
 	"github.com/FedorSidorow/shortener/internal/models"
 	"github.com/FedorSidorow/shortener/internal/shortenererrors"
+	"github.com/google/uuid"
 )
 
 type ShortenerService struct {
@@ -25,7 +26,7 @@ func (svc *ShortenerService) GenerateShortURL(urlString string, host string) (st
 	key, err := svc.storage.Set(urlString)
 	if err != nil {
 		if errors.Is(err, shortenererrors.ErrorCantCreateShortURL) {
-			return "", fmt.Errorf("ошибка хранилища данных - не удалось сгенерировать ключ которого нет в хранилище")
+			return "", shortenererrors.ErrorCantCreateShortURL
 		}
 		if errors.Is(err, shortenererrors.ErrorURLAlreadyExists) {
 			shortURL, joinerr := url.JoinPath("http://", host, key)
@@ -64,7 +65,7 @@ func (svc *ShortenerService) ListGenerateShortURL(ctx context.Context, data []mo
 	toReturnData, err := svc.storage.ListSet(ctx, data)
 	if err != nil {
 		if errors.Is(err, shortenererrors.ErrorCantCreateShortURL) {
-			return nil, fmt.Errorf("ошибка хранилища данных - не удалось сгенерировать ключ которого нет в хранилище")
+			return nil, shortenererrors.ErrorCantCreateShortURL
 		}
 		return nil, fmt.Errorf("ошибка сервиса")
 	}
@@ -77,4 +78,25 @@ func (svc *ShortenerService) ListGenerateShortURL(ctx context.Context, data []mo
 	}
 
 	return toReturnData, nil
+}
+
+func (svc *ShortenerService) GetListUserURLs(ctx context.Context, userID uuid.UUID, host string) ([]*models.UserListJSONShortenResponse, error) {
+	listURLs, err := svc.storage.GetList(ctx, userID)
+
+	if err != nil {
+		return nil, shortenererrors.GetFullURLServicesError
+	}
+
+	if len(listURLs) == 0 {
+		return nil, shortenererrors.NoContentUserServicesError
+	}
+
+	for i := range listURLs {
+		listURLs[i].ShortURL, err = url.JoinPath("http://", host, listURLs[i].ShortURL)
+		if err != nil {
+			return nil, fmt.Errorf("ошибка сервиса")
+		}
+	}
+
+	return listURLs, nil
 }

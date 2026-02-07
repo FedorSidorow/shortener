@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/FedorSidorow/shortener/internal/auth"
 	"github.com/FedorSidorow/shortener/internal/interfaces"
 	"github.com/FedorSidorow/shortener/internal/models"
 	"github.com/FedorSidorow/shortener/internal/serializers"
@@ -182,4 +183,42 @@ func (h *APIHandler) ListJSONGenerateShortkeyHandler(res http.ResponseWriter, re
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusCreated)
 	res.Write(response)
+}
+
+func (h *APIHandler) GetListUserURLsHandler(res http.ResponseWriter, req *http.Request) {
+	var (
+		ctx        = req.Context()
+		userID, ok = auth.UserIDFrom(ctx)
+	)
+
+	if !ok {
+		http.Error(res, "", http.StatusInternalServerError)
+		return
+	}
+
+	listURLs, err := h.shortService.GetListUserURLs(ctx, userID, req.Host)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, shortenererrors.NoContentUserServicesError):
+			http.Error(res, http.StatusText(http.StatusNoContent), http.StatusNoContent)
+			return
+		default:
+			log.Printf("error: %s\n", err)
+			http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	resp, err := json.Marshal(listURLs)
+
+	if err != nil {
+		http.Error(res, "", http.StatusInternalServerError)
+		return
+	}
+
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(http.StatusOK)
+	res.Write(resp)
+
 }
