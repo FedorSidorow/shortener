@@ -6,11 +6,14 @@ import (
 	"os"
 )
 
+const defaultSecretKey = "supersecretkey"
+
 type Options struct {
-	A string
-	B string
-	F string
-	D string
+	A         string
+	B         string
+	F         string
+	D         string
+	SecretKey string
 }
 
 func NewOptions() *Options {
@@ -51,5 +54,10 @@ func (options *Options) setValuesFromEnv() {
 	if dbStoragePath := os.Getenv("DATABASE_DSN"); dbStoragePath != "" {
 		options.D = dbStoragePath
 		log.Printf("env: флаг d - %s\n", options.D)
+	}
+	if envSecretKey := os.Getenv("SECRET_KEY"); envSecretKey != "" {
+		options.SecretKey = envSecretKey
+	} else {
+		options.SecretKey = defaultSecretKey
 	}
 }

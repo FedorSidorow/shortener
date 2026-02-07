@@ -5,16 +5,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 
 	"github.com/FedorSidorow/shortener/config"
+	"github.com/FedorSidorow/shortener/internal/logger"
 	"github.com/FedorSidorow/shortener/internal/models"
 	"github.com/FedorSidorow/shortener/internal/shortenererrors"
 	"github.com/FedorSidorow/shortener/internal/storage/dbstore/migrations"
@@ -35,15 +36,15 @@ func (s *dbStore) migration() error {
 
 	err := goose.RunContext(ctx, cmd, s.db, ".")
 	if err != nil {
-		log.Printf("goose error: %s", err)
+		logger.Log.Error("ошибка бд", logger.ErrorField(err))
 	}
 
 	return nil
 }
 
 func NewStorage(options *config.Options) (*dbStore, error) {
-	log.Printf("Инициализация подключения к БД \n")
-	log.Printf("Строка подключения: %s\n", options.D)
+	logger.Log.Debug("Инициализация подключения к БД \n")
+	logger.Log.Debug(fmt.Sprintf("Строка подключения: %s\n", options.D))
 
 	var (
 		s       = &dbStore{}
@@ -61,7 +62,7 @@ func NewStorage(options *config.Options) (*dbStore, error) {
 	}
 
 	if err := s.db.Ping(); err != nil {
-		log.Printf("Хранилище БД. Ошибка - %s", err)
+		logger.Log.Error("ошибка бд", logger.ErrorField(err))
 		return nil, err
 	}
 
@@ -78,16 +79,16 @@ func (s *dbStore) Close() error {
 }
 
 func (s *dbStore) Ping() error {
-	log.Print("Хранилище БД. Проверка состояния.")
+	logger.Log.Debug("Хранилище БД. Проверка состояния.")
 	if err := s.db.Ping(); err != nil {
-		log.Printf("Хранилище БД. Ошибка - %s", err)
+		logger.Log.Error("ошибка бд", logger.ErrorField(err))
 		return err
 	}
 
 	return nil
 }
 
-func (s *dbStore) Set(url string) (string, error) {
+func (s *dbStore) Set(url string, userID uuid.UUID) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -100,12 +101,12 @@ func (s *dbStore) Set(url string) (string, error) {
 		return toReturn, shortenererrors.ErrorURLAlreadyExists
 	}
 
-	const query = "INSERT INTO content.shorturl (short_key, full_url) VALUES ($1, $2)"
+	const query = "INSERT INTO content.shorturl (short_key, full_url, user_id) VALUES ($1, $2, $3)"
 
 	// Установка в случайный ключ
 	for counter := 1; counter < 10; counter++ {
 		toReturn = utils.GetRandomString(6)
-		_, err := s.db.ExecContext(ctx, query, toReturn, url)
+		_, err := s.db.ExecContext(ctx, query, toReturn, url, userID)
 		if err == nil {
 			return toReturn, nil
 		}
@@ -153,7 +154,7 @@ func (s *dbStore) ListSet(ctx context.Context, data []models.ListJSONShortenRequ
 
 			if err != nil {
 				if errors.Is(err, sql.ErrNoRows) {
-					log.Print("Такой ключ есть в БД")
+					logger.Log.Error("Такой ключ есть в БД")
 					continue
 				}
 
@@ -165,7 +166,7 @@ func (s *dbStore) ListSet(ctx context.Context, data []models.ListJSONShortenRequ
 					}
 				}
 
-				log.Printf("ошибка добавления новой строки - %s", err)
+				logger.Log.Error("ошибка бд", logger.ErrorField(err))
 				return nil, err
 			}
 			toReturnData[i].ShortURL = shortKey
@@ -188,4 +189,31 @@ func (s *dbStore) ListSet(ctx context.Context, data []models.ListJSONShortenRequ
 	}
 
 	return toReturnData, nil
+}
+
+func (s *dbStore) GetList(ctx context.Context, userID uuid.UUID) ([]*models.UserListJSONShortenResponse, error) {
+	const query = "SELECT short_key, full_url FROM content.shorturl WHERE user_id = $1;"
+
+	var list []*models.UserListJSONShortenResponse
+	rows, err := s.db.QueryContext(ctx, query, userID)
+
+	if err != nil {
+		logger.Log.Error("ошибка бд", logger.ErrorField(err))
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var item models.UserListJSONShortenResponse
+		if err := rows.Scan(&item.ShortURL, &item.OriginalURL); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		list = append(list, &item)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error during iteration: %w", err)
+	}
+
+	return list, nil
 }
