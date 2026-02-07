@@ -30,7 +30,6 @@ func NewHandler(service interfaces.ShortenerServicer) (h *APIHandler, err error)
 func (h *APIHandler) GenerateShortKeyHandler(res http.ResponseWriter, req *http.Request) {
 
 	var ctx = req.Context()
-	defer req.Body.Close()
 
 	if req.URL.Path != "/" {
 		http.NotFound(res, req)
@@ -44,6 +43,7 @@ func (h *APIHandler) GenerateShortKeyHandler(res http.ResponseWriter, req *http.
 		return
 	}
 
+	req.Body.Close()
 	if string(urlToShort) == "" {
 		http.Error(res, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return

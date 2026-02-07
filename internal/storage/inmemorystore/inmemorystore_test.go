@@ -3,6 +3,7 @@ package inmemorystore
 import (
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,12 +39,13 @@ func Test_inMemoryStore_Set(t *testing.T) {
 		{name: "Тест 1 - успех", tempStorage: map[string]string{}, url: "testKey", length: 1},
 		{name: "Тест 2 - уже существует - успех", tempStorage: map[string]string{"testKey": "testValue"}, url: "testValue", length: 1},
 	}
+	uuid, _ := uuid.Parse("00000000-0000-0000-0000-000000000000")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &inMemoryStore{
 				tempStorage: tt.tempStorage,
 			}
-			s.Set(tt.url)
+			s.Set(tt.url, uuid)
 			assert.Len(t, s.tempStorage, tt.length, "Длина словаря не совпадает")
 		})
 	}
