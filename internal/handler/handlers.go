@@ -200,7 +200,7 @@ func (h *APIHandler) GetListUserURLsHandler(res http.ResponseWriter, req *http.R
 
 	if err != nil {
 		switch {
-		case errors.Is(err, shortenererrors.NoContentUserServicesError):
+		case errors.Is(err, shortenererrors.ErrorNoContentUserServicesError):
 			http.Error(res, http.StatusText(http.StatusNoContent), http.StatusNoContent)
 			return
 		default:

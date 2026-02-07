@@ -84,11 +84,11 @@ func (svc *ShortenerService) GetListUserURLs(ctx context.Context, userID uuid.UU
 	listURLs, err := svc.storage.GetList(ctx, userID)
 
 	if err != nil {
-		return nil, shortenererrors.GetFullURLServicesError
+		return nil, shortenererrors.ErrorGetFullURLServicesError
 	}
 
 	if len(listURLs) == 0 {
-		return nil, shortenererrors.NoContentUserServicesError
+		return nil, shortenererrors.ErrorNoContentUserServicesError
 	}
 
 	for i := range listURLs {
