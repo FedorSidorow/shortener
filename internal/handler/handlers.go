@@ -95,6 +95,8 @@ func (h *APIHandler) JSONGenerateShortkeyHandler(res http.ResponseWriter, req *h
 		validationErr *shortenererrors.ValidationError
 	)
 
+	var ctx = req.Context()
+
 	data, err = serializers.PostShortURLUnmarshalBody(req)
 	if err != nil {
 		switch {
@@ -109,7 +111,13 @@ func (h *APIHandler) JSONGenerateShortkeyHandler(res http.ResponseWriter, req *h
 		}
 	}
 
-	shortURL, err := h.shortService.GenerateShortURL(data.URL, req.Host)
+	userID, ok := auth.UserIDFrom(ctx)
+	if !ok {
+		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	shortURL, err := h.shortService.GenerateShortURL(ctx, data.URL, req.Host, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, shortenererrors.ErrorURLAlreadyExists):
