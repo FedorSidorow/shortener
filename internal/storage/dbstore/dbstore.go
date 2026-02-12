@@ -126,7 +126,7 @@ func (s *dbStore) Get(key string) (string, error) {
 
 	err := s.db.QueryRowContext(ctx, query, key).Scan(&toReturn, &isDeleted)
 	if err != nil {
-		return "", fmt.Errorf("такого ключа нет %s", key)
+		return "", fmt.Errorf("ошибка при получении значений из БД - %s", err)
 	}
 
 	if isDeleted {
