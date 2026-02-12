@@ -15,6 +15,7 @@ type Storager interface {
 	Close() error
 	ListSet(ctx context.Context, data []models.ListJSONShortenRequest) ([]models.ListJSONShortenResponse, error)
 	GetList(ctx context.Context, userID uuid.UUID) ([]*models.UserListJSONShortenResponse, error)
+	DeleteList(ctx context.Context, data []models.DeletedShortURL) error
 }
 
 type ShortenerServicer interface {
@@ -23,6 +24,7 @@ type ShortenerServicer interface {
 	PingStorage() bool
 	ListGenerateShortURL(ctx context.Context, data []models.ListJSONShortenRequest, host string) ([]models.ListJSONShortenResponse, error)
 	GetListUserURLs(ctx context.Context, userID uuid.UUID, host string) ([]*models.UserListJSONShortenResponse, error)
+	DeleteListUserURLs(ctx context.Context, userID uuid.UUID, data []string)
 }
 
 type ShortenerHandler interface {
@@ -32,4 +34,5 @@ type ShortenerHandler interface {
 	PingDB(w http.ResponseWriter, r *http.Request)
 	ListJSONGenerateShortkeyHandler(w http.ResponseWriter, r *http.Request)
 	GetListUserURLsHandler(w http.ResponseWriter, r *http.Request)
+	DeleteListUserURLsHandler(w http.ResponseWriter, r *http.Request)
 }

@@ -78,9 +78,14 @@ func (h *APIHandler) GetURLByKeyHandler(res http.ResponseWriter, req *http.Reque
 	log.Printf("Ключ полученный из chi.URLParam: %s \n", key)
 	url, err := h.shortService.GetURLByKey(key)
 	if err != nil {
-		http.NotFound(res, req)
-		log.Printf("Not found")
-		return
+		switch {
+		case errors.Is(err, shortenererrors.ErrorGone):
+			http.Error(res, http.StatusText(http.StatusGone), http.StatusGone)
+			return
+		default:
+			http.Error(res, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
 	}
 	res.Header().Set("Location", url)
 	res.WriteHeader(http.StatusTemporaryRedirect)
@@ -209,7 +214,7 @@ func (h *APIHandler) GetListUserURLsHandler(res http.ResponseWriter, req *http.R
 	)
 
 	if !ok {
-		http.Error(res, "", http.StatusInternalServerError)
+		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
@@ -230,12 +235,38 @@ func (h *APIHandler) GetListUserURLsHandler(res http.ResponseWriter, req *http.R
 	resp, err := json.Marshal(listURLs)
 
 	if err != nil {
-		http.Error(res, "", http.StatusInternalServerError)
+		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusOK)
 	res.Write(resp)
+
+}
+
+func (h *APIHandler) DeleteListUserURLsHandler(res http.ResponseWriter, req *http.Request) {
+
+	var (
+		ctx  = req.Context()
+		data []string
+	)
+
+	userID, ok := auth.UserIDFrom(ctx)
+	if !ok {
+		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	data, err := serializers.DeleteListUserURLUnmarshalBody(req)
+
+	if err != nil {
+		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	h.shortService.DeleteListUserURLs(ctx, userID, data)
+
+	res.WriteHeader(http.StatusAccepted)
 
 }

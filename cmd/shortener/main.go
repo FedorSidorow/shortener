@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/FedorSidorow/shortener/config"
@@ -28,6 +29,7 @@ func main() {
 func run() (*server.App, error) {
 	var s interfaces.Storager
 	var err error
+	ctx := context.Context(context.Background())
 
 	options := config.NewOptions()
 
@@ -41,7 +43,7 @@ func run() (*server.App, error) {
 		return nil, err
 	}
 
-	newService := service.NewShortenerService(s)
+	newService := service.NewShortenerService(ctx, s)
 
 	handler, err := handler.NewHandler(newService)
 	if err != nil {

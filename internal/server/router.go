@@ -25,6 +25,7 @@ func InitRouter(handler interfaces.ShortenerHandler, options *config.Options) *c
 		r.Get("/ping", handler.PingDB)
 		r.Post("/api/shorten/batch", handler.ListJSONGenerateShortkeyHandler)
 		r.Get("/api/user/urls", handler.GetListUserURLsHandler)
+		r.Delete("/api/user/urls", handler.DeleteListUserURLsHandler)
 	})
 	return router
 }

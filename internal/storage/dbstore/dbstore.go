@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -119,12 +120,17 @@ func (s *dbStore) Get(key string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	const query = "SELECT full_url FROM content.shorturl WHERE short_key = $1"
+	const query = "SELECT full_url, is_deleted FROM content.shorturl WHERE short_key = $1 LIMIT 1;"
 	var toReturn string
+	var is_deleted bool
 
-	err := s.db.QueryRowContext(ctx, query, key).Scan(&toReturn)
+	err := s.db.QueryRowContext(ctx, query, key).Scan(&toReturn, &is_deleted)
 	if err != nil {
 		return "", fmt.Errorf("такого ключа нет %s", key)
+	}
+
+	if is_deleted {
+		return toReturn, shortenererrors.ErrorGone
 	}
 
 	return toReturn, nil
@@ -216,4 +222,25 @@ func (s *dbStore) GetList(ctx context.Context, userID uuid.UUID) ([]*models.User
 	}
 
 	return list, nil
+}
+
+func (s *dbStore) DeleteList(ctx context.Context, data []models.DeletedShortURL) error {
+	var values []string
+	var args = []any{true}
+
+	for i, v := range data {
+		params := fmt.Sprintf("(user_id = $%d AND short_key= $%d)", i*2+2, i*2+3)
+		values = append(values, params)
+		args = append(args, v.UserId, v.Key)
+	}
+
+	query := `UPDATE content.shorturl SET is_deleted=true WHERE ` + strings.Join(values, " OR ") + `;`
+	_, err := s.db.ExecContext(ctx, query, args...)
+
+	if err != nil {
+		logger.Log.Error("ошибка бд", logger.ErrorField(err))
+		return err
+	}
+
+	return nil
 }

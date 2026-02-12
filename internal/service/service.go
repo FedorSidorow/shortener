@@ -5,21 +5,32 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/FedorSidorow/shortener/internal/interfaces"
+	"github.com/FedorSidorow/shortener/internal/logger"
 	"github.com/FedorSidorow/shortener/internal/models"
 	"github.com/FedorSidorow/shortener/internal/shortenererrors"
 	"github.com/google/uuid"
 )
 
 type ShortenerService struct {
-	storage interfaces.Storager
+	storage   interfaces.Storager
+	deletedCh chan models.DeletedShortURL
+	doneCh    chan struct{}
 }
 
-func NewShortenerService(storage interfaces.Storager) *ShortenerService {
-	return &ShortenerService{
-		storage: storage,
+func NewShortenerService(ctx context.Context, storage interfaces.Storager) *ShortenerService {
+
+	ss := &ShortenerService{
+		storage:   storage,
+		deletedCh: make(chan models.DeletedShortURL, 500),
+		doneCh:    make(chan struct{}),
 	}
+
+	go ss.deleteBatch(ctx)
+
+	return ss
 }
 
 func (svc *ShortenerService) GenerateShortURL(ctx context.Context, urlString string, host string, userID uuid.UUID) (string, error) {
@@ -49,7 +60,7 @@ func (svc *ShortenerService) GenerateShortURL(ctx context.Context, urlString str
 func (svc *ShortenerService) GetURLByKey(key string) (string, error) {
 	url, err := svc.storage.Get(key)
 	if err != nil {
-		return "", fmt.Errorf("ошибка сервиса")
+		return "", err
 	}
 	return url, nil
 }
@@ -99,4 +110,54 @@ func (svc *ShortenerService) GetListUserURLs(ctx context.Context, userID uuid.UU
 	}
 
 	return listURLs, nil
+}
+
+func (svc *ShortenerService) DeleteListUserURLs(ctx context.Context, userID uuid.UUID, data []string) {
+	go func() {
+		for _, v := range data {
+			select {
+			case <-svc.doneCh:
+				return
+			case svc.deletedCh <- models.DeletedShortURL{UserId: userID, Key: v}:
+			}
+		}
+	}()
+}
+
+func (svc *ShortenerService) deleteBatch(ctx context.Context) {
+	ticker := time.NewTicker(10 * time.Second)
+
+	var data []models.DeletedShortURL
+
+	for {
+		select {
+		case <-ctx.Done():
+
+			for len(svc.deletedCh) > 0 {
+				d := <-svc.deletedCh
+				data = append(data, d)
+			}
+
+			if len(data) != 0 {
+				if err := svc.storage.DeleteList(ctx, data); err != nil {
+					logger.Log.Error("cannot deleted shortURL", logger.ErrorField(err))
+				}
+			}
+			logger.Log.Info("Завершение удаления ссылок - ОК")
+			return
+
+		case d := <-svc.deletedCh:
+			data = append(data, d)
+		case <-ticker.C:
+			if len(data) == 0 {
+				continue
+			}
+			err := svc.storage.DeleteList(ctx, data)
+			if err != nil {
+				logger.Log.Debug("cannot deleted shortURL", logger.ErrorField(err))
+				continue
+			}
+			data = nil
+		}
+	}
 }

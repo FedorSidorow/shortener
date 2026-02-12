@@ -1,6 +1,8 @@
 package models
 
-import "github.com/FedorSidorow/shortener/internal/shortenererrors"
+import (
+	"github.com/FedorSidorow/shortener/internal/shortenererrors"
+)
 
 type JSONShortenRequest struct {
 	URL string `json:"url"`

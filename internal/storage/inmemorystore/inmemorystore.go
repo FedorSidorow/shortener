@@ -187,3 +187,18 @@ func (s *inMemoryStore) ListSet(ctx context.Context, data []models.ListJSONShort
 func (s *inMemoryStore) GetList(ctx context.Context, userID uuid.UUID) ([]*models.UserListJSONShortenResponse, error) {
 	return []*models.UserListJSONShortenResponse{}, nil
 }
+
+func (s *inMemoryStore) DeleteList(ctx context.Context, data []models.DeletedShortURL) error {
+
+	for _, v := range data {
+
+		_, ok := s.tempStorage[v.Key]
+
+		if ok {
+			delete(s.tempStorage, v.Key)
+		}
+
+	}
+
+	return nil
+}
