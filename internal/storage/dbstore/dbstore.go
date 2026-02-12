@@ -234,7 +234,7 @@ func (s *dbStore) DeleteList(ctx context.Context, data []models.DeletedShortURL)
 		args = append(args, v.UserID, v.Key)
 	}
 
-	query := `UPDATE content.shorturl SET is_deleted=true WHERE ` + strings.Join(values, " OR ") + `;`
+	query := `UPDATE content.shorturl SET is_deleted=$1 WHERE ` + strings.Join(values, " OR ") + `;`
 	_, err := s.db.ExecContext(ctx, query, args...)
 
 	if err != nil {
