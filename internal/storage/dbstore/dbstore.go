@@ -122,14 +122,14 @@ func (s *dbStore) Get(key string) (string, error) {
 
 	const query = "SELECT full_url, is_deleted FROM content.shorturl WHERE short_key = $1 LIMIT 1;"
 	var toReturn string
-	var is_deleted bool
+	var isDeleted bool
 
-	err := s.db.QueryRowContext(ctx, query, key).Scan(&toReturn, &is_deleted)
+	err := s.db.QueryRowContext(ctx, query, key).Scan(&toReturn, &isDeleted)
 	if err != nil {
 		return "", fmt.Errorf("такого ключа нет %s", key)
 	}
 
-	if is_deleted {
+	if isDeleted {
 		return toReturn, shortenererrors.ErrorGone
 	}
 
