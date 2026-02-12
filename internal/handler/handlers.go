@@ -78,6 +78,7 @@ func (h *APIHandler) GetURLByKeyHandler(res http.ResponseWriter, req *http.Reque
 	log.Printf("Ключ полученный из chi.URLParam: %s \n", key)
 	url, err := h.shortService.GetURLByKey(key)
 	if err != nil {
+		log.Printf("ошибка %v", err)
 		switch {
 		case errors.Is(err, shortenererrors.ErrorGone):
 			http.Error(res, http.StatusText(http.StatusGone), http.StatusGone)
