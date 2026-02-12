@@ -3,6 +3,6 @@ package models
 import "github.com/google/uuid"
 
 type DeletedShortURL struct {
-	UserId uuid.UUID
+	UserID uuid.UUID
 	Key    string
 }

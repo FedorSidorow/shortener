@@ -231,7 +231,7 @@ func (s *dbStore) DeleteList(ctx context.Context, data []models.DeletedShortURL)
 	for i, v := range data {
 		params := fmt.Sprintf("(user_id = $%d AND short_key= $%d)", i*2+2, i*2+3)
 		values = append(values, params)
-		args = append(args, v.UserId, v.Key)
+		args = append(args, v.UserID, v.Key)
 	}
 
 	query := `UPDATE content.shorturl SET is_deleted=true WHERE ` + strings.Join(values, " OR ") + `;`

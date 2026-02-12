@@ -118,7 +118,7 @@ func (svc *ShortenerService) DeleteListUserURLs(ctx context.Context, userID uuid
 			select {
 			case <-svc.doneCh:
 				return
-			case svc.deletedCh <- models.DeletedShortURL{UserId: userID, Key: v}:
+			case svc.deletedCh <- models.DeletedShortURL{UserID: userID, Key: v}:
 			}
 		}
 	}()
