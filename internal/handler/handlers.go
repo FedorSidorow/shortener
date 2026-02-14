@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/FedorSidorow/shortener/internal/auth"
 	"github.com/FedorSidorow/shortener/internal/interfaces"
 	"github.com/FedorSidorow/shortener/internal/models"
 	"github.com/FedorSidorow/shortener/internal/serializers"
@@ -27,6 +28,9 @@ func NewHandler(service interfaces.ShortenerServicer) (h *APIHandler, err error)
 }
 
 func (h *APIHandler) GenerateShortKeyHandler(res http.ResponseWriter, req *http.Request) {
+
+	var ctx = req.Context()
+
 	if req.URL.Path != "/" {
 		http.NotFound(res, req)
 		return
@@ -45,7 +49,13 @@ func (h *APIHandler) GenerateShortKeyHandler(res http.ResponseWriter, req *http.
 		return
 	}
 
-	shortURL, err := h.shortService.GenerateShortURL(string(urlToShort), req.Host)
+	userID, ok := auth.UserIDFrom(ctx)
+	if !ok {
+		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	shortURL, err := h.shortService.GenerateShortURL(ctx, string(urlToShort), req.Host, userID)
 	if err != nil {
 		if errors.Is(err, shortenererrors.ErrorURLAlreadyExists) {
 			res.Header().Set("content-type", "text/plain")
@@ -68,9 +78,15 @@ func (h *APIHandler) GetURLByKeyHandler(res http.ResponseWriter, req *http.Reque
 	log.Printf("Ключ полученный из chi.URLParam: %s \n", key)
 	url, err := h.shortService.GetURLByKey(key)
 	if err != nil {
-		http.NotFound(res, req)
-		log.Printf("Not found")
-		return
+		log.Printf("ошибка %v", err)
+		switch {
+		case errors.Is(err, shortenererrors.ErrorGone):
+			http.Error(res, http.StatusText(http.StatusGone), http.StatusGone)
+			return
+		default:
+			http.Error(res, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
 	}
 	res.Header().Set("Location", url)
 	res.WriteHeader(http.StatusTemporaryRedirect)
@@ -84,6 +100,8 @@ func (h *APIHandler) JSONGenerateShortkeyHandler(res http.ResponseWriter, req *h
 		err           error
 		validationErr *shortenererrors.ValidationError
 	)
+
+	var ctx = req.Context()
 
 	data, err = serializers.PostShortURLUnmarshalBody(req)
 	if err != nil {
@@ -99,7 +117,13 @@ func (h *APIHandler) JSONGenerateShortkeyHandler(res http.ResponseWriter, req *h
 		}
 	}
 
-	shortURL, err := h.shortService.GenerateShortURL(data.URL, req.Host)
+	userID, ok := auth.UserIDFrom(ctx)
+	if !ok {
+		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	shortURL, err := h.shortService.GenerateShortURL(ctx, data.URL, req.Host, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, shortenererrors.ErrorURLAlreadyExists):
@@ -182,4 +206,68 @@ func (h *APIHandler) ListJSONGenerateShortkeyHandler(res http.ResponseWriter, re
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusCreated)
 	res.Write(response)
+}
+
+func (h *APIHandler) GetListUserURLsHandler(res http.ResponseWriter, req *http.Request) {
+	var (
+		ctx        = req.Context()
+		userID, ok = auth.UserIDFrom(ctx)
+	)
+
+	if !ok {
+		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	listURLs, err := h.shortService.GetListUserURLs(ctx, userID, req.Host)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, shortenererrors.ErrorNoContentUserServicesError):
+			http.Error(res, http.StatusText(http.StatusNoContent), http.StatusNoContent)
+			return
+		default:
+			log.Printf("error: %s\n", err)
+			http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	resp, err := json.Marshal(listURLs)
+
+	if err != nil {
+		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(http.StatusOK)
+	res.Write(resp)
+
+}
+
+func (h *APIHandler) DeleteListUserURLsHandler(res http.ResponseWriter, req *http.Request) {
+
+	var (
+		ctx  = req.Context()
+		data []string
+	)
+
+	userID, ok := auth.UserIDFrom(ctx)
+	if !ok {
+		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	data, err := serializers.DeleteListUserURLUnmarshalBody(req)
+
+	if err != nil {
+		http.Error(res, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	h.shortService.DeleteListUserURLs(ctx, userID, data)
+
+	res.WriteHeader(http.StatusAccepted)
+
 }

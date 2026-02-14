@@ -59,3 +59,22 @@ func ListPostShortURLUnmarshalBody(req *http.Request) ([]models.ListJSONShortenR
 
 	return data, errors.Join(errs...)
 }
+
+func DeleteListUserURLUnmarshalBody(req *http.Request) ([]string, error) {
+
+	defer req.Body.Close()
+
+	var data []string
+	var buf bytes.Buffer
+	_, err := buf.ReadFrom(req.Body)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err = json.Unmarshal(buf.Bytes(), &data); err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}

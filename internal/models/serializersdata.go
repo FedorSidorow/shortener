@@ -1,6 +1,8 @@
 package models
 
-import "github.com/FedorSidorow/shortener/internal/shortenererrors"
+import (
+	"github.com/FedorSidorow/shortener/internal/shortenererrors"
+)
 
 type JSONShortenRequest struct {
 	URL string `json:"url"`
@@ -32,4 +34,9 @@ func (req *ListJSONShortenRequest) IsValid() error {
 		return &shortenererrors.ValidationError{Field: "url", Msg: "пустая строка"}
 	}
 	return nil
+}
+
+type UserListJSONShortenResponse struct {
+	OriginalURL string `json:"original_url,omitempty"`
+	ShortURL    string `json:"short_url,omitempty"`
 }
