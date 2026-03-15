@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -101,5 +103,65 @@ func AuthCookieMiddleware(next http.Handler, options *config.Options) http.Handl
 		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)
+	})
+}
+
+func AuditMiddleware(next http.HandlerFunc, action string, options *config.Options) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var originalURL string
+		if action == "shorten" {
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				logger.Log.Error("failed to read request body for audit", logger.ErrorField(err))
+			} else {
+				originalURL = string(body)
+				r.Body = io.NopCloser(bytes.NewReader(body))
+			}
+		}
+
+		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+		var locationURL string
+
+		next(ww, r)
+
+		status := ww.Status()
+		if status >= 400 {
+			return
+		}
+
+		if action == "follow" {
+			loc := ww.Header().Get("Location")
+			if loc != "" {
+				locationURL = loc
+			}
+		}
+
+		url := originalURL
+		if action == "follow" && locationURL != "" {
+			url = locationURL
+		}
+
+		userID, _ := auth.UserIDFrom(r.Context())
+		userIDStr := ""
+		if userID != uuid.Nil {
+			userIDStr = userID.String()
+		}
+
+		event := auditEvent{
+			TS:     time.Now().Unix(),
+			Action: action,
+			UserID: userIDStr,
+			URL:    url,
+		}
+
+		if options.AuditFile != "" {
+			if err := writeAuditToFile(options.AuditFile, event); err != nil {
+				logger.Log.Error("failed to write audit to file", logger.ErrorField(err))
+			}
+		}
+
+		if options.AuditURL != "" {
+			sendAuditToRemote(options.AuditURL, event)
+		}
 	})
 }

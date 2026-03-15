@@ -19,7 +19,7 @@ func InitRouter(handler interfaces.ShortenerHandler, options *config.Options) *c
 		r.Use(func(next http.Handler) http.Handler {
 			return middleware.AuthCookieMiddleware(next, options)
 		})
-		r.Post("/", handler.GenerateShortKeyHandler)
+		r.Post("/", middleware.AuditMiddleware(handler.GenerateShortKeyHandler, "shorten", options))
 		r.Get("/*", handler.GetURLByKeyHandler)
 		r.Post("/api/shorten", handler.JSONGenerateShortkeyHandler)
 		r.Get("/ping", handler.PingDB)
