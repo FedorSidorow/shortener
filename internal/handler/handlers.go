@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -13,7 +14,17 @@ import (
 	"github.com/FedorSidorow/shortener/internal/serializers"
 	"github.com/FedorSidorow/shortener/internal/shortenererrors"
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
+
+type ShortenerServicer interface {
+	GetURLByKey(key string) (string, error)
+	GenerateShortURL(ctx context.Context, URL string, host string, userID uuid.UUID) (string, error)
+	PingStorage() bool
+	ListGenerateShortURL(ctx context.Context, data []models.ListJSONShortenRequest, host string) ([]models.ListJSONShortenResponse, error)
+	GetListUserURLs(ctx context.Context, userID uuid.UUID, host string) ([]*models.UserListJSONShortenResponse, error)
+	DeleteListUserURLs(ctx context.Context, userID uuid.UUID, data []string)
+}
 
 type APIHandler struct {
 	shortService interfaces.ShortenerServicer
@@ -75,7 +86,7 @@ func (h *APIHandler) GenerateShortKeyHandler(res http.ResponseWriter, req *http.
 
 func (h *APIHandler) GetURLByKeyHandler(res http.ResponseWriter, req *http.Request) {
 	key := chi.URLParam(req, "*")
-	log.Printf("Ключ полученный из chi.URLParam: %s \n", key)
+	// log.Printf("Ключ полученный из chi.URLParam: %s \n", key)
 	url, err := h.shortService.GetURLByKey(key)
 	if err != nil {
 		log.Printf("ошибка %v", err)
