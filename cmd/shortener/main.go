@@ -26,6 +26,7 @@ func main() {
 	}
 }
 
+// run() выполняет все предворительные действия и вызывает функцию запуска сервера.
 func run() (*server.App, error) {
 	var s interfaces.Storager
 	var err error

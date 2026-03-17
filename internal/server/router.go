@@ -11,6 +11,7 @@ import (
 	chiMW "github.com/go-chi/chi/v5/middleware"
 )
 
+// initRouter() инициализирует и возвращает маршрутизатор.
 func InitRouter(handler interfaces.ShortenerHandler, options *config.Options) *chi.Mux {
 	log.Printf("Инициализация роутера")
 	router := chi.NewRouter()

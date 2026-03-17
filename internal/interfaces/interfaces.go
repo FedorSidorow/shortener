@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// Storager Интерфейс хранилища.
 type Storager interface {
 	Set(url string, userID uuid.UUID) (string, error)
 	Get(key string) (string, error)
@@ -27,6 +28,7 @@ type ShortenerServicer interface {
 	DeleteListUserURLs(ctx context.Context, userID uuid.UUID, data []string)
 }
 
+// Handler интерфейс определяет необходимые методы для инициализации маршрутизатора.
 type ShortenerHandler interface {
 	GenerateShortKeyHandler(w http.ResponseWriter, r *http.Request)
 	GetURLByKeyHandler(w http.ResponseWriter, r *http.Request)

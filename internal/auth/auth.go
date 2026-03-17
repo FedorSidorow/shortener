@@ -8,13 +8,17 @@ import (
 	"github.com/FedorSidorow/shortener/internal/logger"
 )
 
+// claims сущность пользователя для внутренних операций.
 type claims struct {
 	jwt.RegisteredClaims
 	UserID uuid.UUID
 }
 
+// NameCookie константа NameCookie - ключ в cookie для токена авторизации.
 const NameCookie = "token"
 
+// BuildJWTString(UserID uuid.UUID) (string, error) создаёт токен для пользователя с UserID
+// и возвращает его в виде строки в случае успеха
 func BuildJWTString(options *config.Options, UserID uuid.UUID) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims{
@@ -31,6 +35,8 @@ func BuildJWTString(options *config.Options, UserID uuid.UUID) (string, error) {
 	return tokenString, nil
 }
 
+// GetUserID(tokenString string) (uuid.UUID, error) Проверяет токен
+// и в случае успеха возвращает из полезной нагрузки UserID.
 func GetUserID(options *config.Options, tokenString string) uuid.UUID {
 
 	claims := &claims{}

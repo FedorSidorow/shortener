@@ -21,6 +21,7 @@ type auditEvent struct {
 
 var fileWriteMu sync.Mutex
 
+// writeAuditToFile добавляет переданную строку аудита в конец файла.
 func writeAuditToFile(filePath string, event auditEvent) error {
 	fileWriteMu.Lock()
 	defer fileWriteMu.Unlock()
@@ -41,6 +42,7 @@ func writeAuditToFile(filePath string, event auditEvent) error {
 	return err
 }
 
+// sendAuditToRemote отправляет переданную строку аудита на указанный удаленный сервер.
 func sendAuditToRemote(url string, event auditEvent) {
 	go func() {
 		data, err := json.Marshal(event)

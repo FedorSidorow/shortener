@@ -14,6 +14,7 @@ type App struct {
 	shortenerAPI *interfaces.ShortenerHandler
 }
 
+// NewApp инициализирует приложение.
 func NewApp(options *config.Options, shortenerAPI interfaces.ShortenerHandler) *App {
 	log.Printf("Инициализация приложения")
 	return &App{
@@ -22,6 +23,7 @@ func NewApp(options *config.Options, shortenerAPI interfaces.ShortenerHandler) *
 	}
 }
 
+// Run() запускает сервер и слушает его по указанному хосту.
 func (app *App) Run() error {
 	server, err := app.createServer()
 	if err != nil {
@@ -39,6 +41,7 @@ func (app *App) Run() error {
 	return nil
 }
 
+// createServer создает сервер с задаными путями
 func (app *App) createServer() (*http.Server, error) {
 	router := InitRouter(*app.shortenerAPI, app.options)
 	server := &http.Server{

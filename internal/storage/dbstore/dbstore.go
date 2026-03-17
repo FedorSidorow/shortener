@@ -23,10 +23,12 @@ import (
 	"github.com/FedorSidorow/shortener/internal/utils"
 )
 
+// dbStore хранит данные в Postgres.
 type dbStore struct {
 	db *sql.DB
 }
 
+// migration() проверяет нувые миграции и при неообходимости добавляет в БД.
 func (s *dbStore) migration() error {
 	goose.SetBaseFS(migrations.Migrations)
 
@@ -43,6 +45,7 @@ func (s *dbStore) migration() error {
 	return nil
 }
 
+// NewStorage создаёт и возвращает новый экземпляр dbStore.
 func NewStorage(options *config.Options) (*dbStore, error) {
 	logger.Log.Debug("Инициализация подключения к БД \n")
 	logger.Log.Debug(fmt.Sprintf("Строка подключения: %s\n", options.D))
@@ -70,6 +73,7 @@ func NewStorage(options *config.Options) (*dbStore, error) {
 	return s, nil
 }
 
+// Close Закрывает соединение.
 func (s *dbStore) Close() error {
 
 	if err := s.db.Close(); err != nil {
@@ -79,6 +83,7 @@ func (s *dbStore) Close() error {
 	return nil
 }
 
+// Ping Прверяет соединение.
 func (s *dbStore) Ping() error {
 	logger.Log.Debug("Хранилище БД. Проверка состояния.")
 	if err := s.db.Ping(); err != nil {
@@ -89,6 +94,7 @@ func (s *dbStore) Ping() error {
 	return nil
 }
 
+// Set Добавляет в хранилище полную ссылку и присваевает ей ключ.
 func (s *dbStore) Set(url string, userID uuid.UUID) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -116,6 +122,7 @@ func (s *dbStore) Set(url string, userID uuid.UUID) (string, error) {
 	return "", shortenererrors.ErrorCantCreateShortURL
 }
 
+// Get Достаёт из хранилища и возвращает полную ссылку по ключу.
 func (s *dbStore) Get(key string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -136,6 +143,7 @@ func (s *dbStore) Get(key string) (string, error) {
 	return toReturn, nil
 }
 
+// ListSet Добавляет в хранилище несколько полных ссылок и присваевает им ключи.
 func (s *dbStore) ListSet(ctx context.Context, data []models.ListJSONShortenRequest) ([]models.ListJSONShortenResponse, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 
@@ -197,6 +205,7 @@ func (s *dbStore) ListSet(ctx context.Context, data []models.ListJSONShortenRequ
 	return toReturnData, nil
 }
 
+// GetList достает список url users.
 func (s *dbStore) GetList(ctx context.Context, userID uuid.UUID) ([]*models.UserListJSONShortenResponse, error) {
 	const query = "SELECT short_key, full_url FROM content.shorturl WHERE user_id = $1;"
 
@@ -224,6 +233,7 @@ func (s *dbStore) GetList(ctx context.Context, userID uuid.UUID) ([]*models.User
 	return list, nil
 }
 
+// DeleteList удаляет список коротких ссылок пользователя.
 func (s *dbStore) DeleteList(ctx context.Context, data []models.DeletedShortURL) error {
 	var values []string
 	var args = []any{true}

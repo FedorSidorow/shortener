@@ -7,6 +7,7 @@ import (
 	"github.com/FedorSidorow/shortener/internal/storage/inmemorystore"
 )
 
+// NewStorage создает новое хранилище.
 func NewStorage(options *config.Options) (interfaces.Storager, error) {
 	var storage interfaces.Storager
 	var err error

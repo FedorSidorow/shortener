@@ -6,8 +6,10 @@ import (
 	"os"
 )
 
+// defaultSecretKey Конфигурация авторизации.
 const defaultSecretKey = "supersecretkey"
 
+// Options Общая конфигурация сервиса.
 type Options struct {
 	A         string
 	B         string
@@ -18,6 +20,10 @@ type Options struct {
 	AuditURL  string
 }
 
+// NewOptions Создаёи и возвращает новый объект Options
+// Вызывает все доступные методы(перезапись последующими):
+// setValuesFromFlags - обрабатывает аргументы командной строки;
+// setValuesFromEnv - обрабатывает переменные окружения;
 func NewOptions() *Options {
 	log.Printf("Инициализация опций программы")
 	options := Options{}
@@ -26,6 +32,8 @@ func NewOptions() *Options {
 	return &options
 }
 
+// setValuesFromFlags обрабатывает аргументы командной строки,
+// и сохраняет их значения в соответствующих переменных структуры.
 func (options *Options) setValuesFromFlags() {
 	log.Printf("Поиск флагов")
 	flag.StringVar(&options.A, "a", ":8080", "адрес запуска HTTP-сервера")
@@ -37,6 +45,8 @@ func (options *Options) setValuesFromFlags() {
 	flag.Parse()
 }
 
+// setValuesFromEnv() обрабатывает переменные окружения,
+// и сохраняет их значения в соответствующих переменных структуры.
 func (options *Options) setValuesFromEnv() {
 	log.Printf("Поиск переменных окружения (перезапись флагов если существуют)")
 	if envRunAddr := os.Getenv("SERVER_ADDRESS"); envRunAddr != "" {

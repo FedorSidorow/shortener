@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// LogRequest — middleware-логер для входящих HTTP-запросов.
 func LogRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// TODO: Отправьте лог в канал, чтобы не блокировать обработку запроса.
@@ -33,6 +34,7 @@ func LogRequest(next http.Handler) http.Handler {
 	})
 }
 
+// GzipRequest - определяет запрос на сжатие и при необходимости возвращает сжатый ответ.
 func GzipRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		var ow http.ResponseWriter
@@ -63,6 +65,9 @@ func GzipRequest(next http.Handler) http.Handler {
 	})
 }
 
+// AuthCookieMiddleware(next http.Handler) http.Handler — middleware-для входящих HTTP-запросов.
+// Выдаёт пользователю симметрично подписанную куку, содержащую уникальный идентификатор пользователя,
+// если такой куки не существует или она не проходит проверку подлинности.
 func AuthCookieMiddleware(next http.Handler, options *config.Options) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -106,6 +111,7 @@ func AuthCookieMiddleware(next http.Handler, options *config.Options) http.Handl
 	})
 }
 
+// AuditMiddleware - создает аудит запись.
 func AuditMiddleware(next http.HandlerFunc, action string, options *config.Options) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var originalURL string
