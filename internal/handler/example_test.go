@@ -25,15 +25,15 @@ func ExampleAPIHandler_GenerateShortKeyHandler() {
 
 		bodyRequest = strings.NewReader("http://e.com")
 		response    = httptest.NewRecorder()
-		mockReq, _  = http.NewRequest(http.MethodPost, "http://localhost", bodyRequest)
+		mockReq, _  = http.NewRequest(http.MethodPost, "http://localhost/", bodyRequest)
 		userID      = uuid.New()
 		ctx         = auth.WithUserID(mockReq.Context(), userID)
 	)
 	mockReq = mockReq.WithContext(ctx)
 
 	mockService.EXPECT().
-		GenerateShortURL(mockReq.Context(), userID, "http://e.com", mockReq.Host).
-		Return("http://localhost/testKey", http.StatusCreated)
+		GenerateShortURL(mockReq.Context(), "http://e.com", mockReq.Host, userID).
+		Return("http://localhost/testKey", nil)
 
 	h.GenerateShortKeyHandler(response, mockReq)
 	fmt.Println(response.Code)
