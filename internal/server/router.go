@@ -12,7 +12,7 @@ import (
 )
 
 // initRouter() инициализирует и возвращает маршрутизатор.
-func InitRouter(handler interfaces.ShortenerHandler, options *config.Options) *chi.Mux {
+func InitRouter(handler interfaces.ShortenerHandler, options *config.Options, pub *middleware.Publisher) *chi.Mux {
 	log.Printf("Инициализация роутера")
 	router := chi.NewRouter()
 	router.Group(func(r chi.Router) {
@@ -21,9 +21,9 @@ func InitRouter(handler interfaces.ShortenerHandler, options *config.Options) *c
 		r.Use(func(next http.Handler) http.Handler {
 			return middleware.AuthCookieMiddleware(next, options)
 		})
-		r.Post("/", middleware.AuditMiddleware(handler.GenerateShortKeyHandler, "shorten", options))
-		r.Get("/*", handler.GetURLByKeyHandler)
-		r.Post("/api/shorten", handler.JSONGenerateShortkeyHandler)
+		r.Post("/", middleware.AuditMiddleware(handler.GenerateShortKeyHandler, "shorten", pub))
+		r.Get("/*", middleware.AuditMiddleware(handler.GetURLByKeyHandler, "follow", pub))
+		r.Post("/api/shorten", middleware.AuditMiddleware(handler.JSONGenerateShortkeyHandler, "shorten", pub))
 		r.Get("/ping", handler.PingDB)
 		r.Post("/api/shorten/batch", handler.ListJSONGenerateShortkeyHandler)
 		r.Get("/api/user/urls", handler.GetListUserURLsHandler)

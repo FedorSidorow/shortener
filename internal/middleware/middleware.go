@@ -112,7 +112,7 @@ func AuthCookieMiddleware(next http.Handler, options *config.Options) http.Handl
 }
 
 // AuditMiddleware - создает аудит запись.
-func AuditMiddleware(next http.HandlerFunc, action string, options *config.Options) http.HandlerFunc {
+func AuditMiddleware(next http.HandlerFunc, action string, pub *Publisher) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var originalURL string
 		if action == "shorten" {
@@ -160,14 +160,6 @@ func AuditMiddleware(next http.HandlerFunc, action string, options *config.Optio
 			URL:    url,
 		}
 
-		if options.AuditFile != "" {
-			if err := writeAuditToFile(options.AuditFile, event); err != nil {
-				logger.Log.Error("failed to write audit to file", logger.ErrorField(err))
-			}
-		}
-
-		if options.AuditURL != "" {
-			sendAuditToRemote(options.AuditURL, event)
-		}
+		pub.Notify(event)
 	})
 }

@@ -19,31 +19,68 @@ type auditEvent struct {
 	URL    string `json:"url"`
 }
 
-var fileWriteMu sync.Mutex
+type observer interface {
+	update(auditEvent)
+	getID() string
+}
+
+type fileAuditer struct {
+	fileWriteMu sync.Mutex
+	filePath    string
+}
+
+// CreateFileAuditor создает экземпляр аудитора записи в файл
+func CreateFileAuditor(filePath string) *fileAuditer {
+	return &fileAuditer{
+		filePath: filePath,
+	}
+}
 
 // writeAuditToFile добавляет переданную строку аудита в конец файла.
-func writeAuditToFile(filePath string, event auditEvent) error {
-	fileWriteMu.Lock()
-	defer fileWriteMu.Unlock()
+func (a *fileAuditer) update(event auditEvent) {
 
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	a.fileWriteMu.Lock()
+	defer a.fileWriteMu.Unlock()
+
+	file, err := os.OpenFile(a.filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		return err
+		logger.Log.Error("failed to open file", logger.ErrorField(err))
+		return
 	}
 	defer file.Close()
 
 	data, err := json.Marshal(event)
 	if err != nil {
-		return err
+		logger.Log.Error("failed to marshal audit event", logger.ErrorField(err))
+		return
 	}
 	data = append(data, '\n')
 
 	_, err = file.Write(data)
-	return err
+	if err != nil {
+		logger.Log.Error("failed to write event", logger.ErrorField(err))
+		return
+	}
+	return
+}
+
+func (a *fileAuditer) getID() string {
+	return "fileAuditor"
+}
+
+type remoteAuditor struct {
+	url string
+}
+
+// CreateRemoteAuditor создает экземпляр аудитора записи на удаленный сервер
+func CreateRemoteAuditor(url string) *remoteAuditor {
+	return &remoteAuditor{
+		url: url,
+	}
 }
 
 // sendAuditToRemote отправляет переданную строку аудита на указанный удаленный сервер.
-func sendAuditToRemote(url string, event auditEvent) {
+func (a *remoteAuditor) update(event auditEvent) {
 	go func() {
 		data, err := json.Marshal(event)
 		if err != nil {
@@ -54,7 +91,7 @@ func sendAuditToRemote(url string, event auditEvent) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(data))
+		req, err := http.NewRequestWithContext(ctx, "POST", a.url, bytes.NewReader(data))
 		if err != nil {
 			logger.Log.Error("failed to create audit request", logger.ErrorField(err))
 			return
@@ -72,4 +109,28 @@ func sendAuditToRemote(url string, event auditEvent) {
 			logger.Log.Error("audit server returned error", logger.IntField("status", resp.StatusCode))
 		}
 	}()
+}
+
+func (a *remoteAuditor) getID() string {
+	return "remoteAuditor"
+}
+
+type Publisher struct {
+	observers map[string]observer
+}
+
+func CreatePublisher() *Publisher {
+	return &Publisher{
+		observers: make(map[string]observer),
+	}
+}
+
+func (e *Publisher) Register(o observer) {
+	e.observers[o.getID()] = o
+}
+
+func (e *Publisher) Notify(msg auditEvent) {
+	for _, observer := range e.observers {
+		observer.update(msg)
+	}
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/FedorSidorow/shortener/internal/handler"
 	"github.com/FedorSidorow/shortener/internal/interfaces"
 	"github.com/FedorSidorow/shortener/internal/logger"
+	"github.com/FedorSidorow/shortener/internal/middleware"
 	"github.com/FedorSidorow/shortener/internal/server"
 	"github.com/FedorSidorow/shortener/internal/service"
 	"github.com/FedorSidorow/shortener/internal/storage"
@@ -52,7 +53,16 @@ func run() (*server.App, error) {
 		return nil, err
 	}
 
-	appApp := server.NewApp(options, handler)
+	pub := middleware.CreatePublisher()
+	if options.AuditFile != "" {
+		pub.Register(middleware.CreateFileAuditor(options.AuditFile))
+	}
+
+	if options.AuditURL != "" {
+		pub.Register(middleware.CreateRemoteAuditor(options.AuditURL))
+	}
+
+	appApp := server.NewApp(options, handler, pub)
 
 	return appApp, nil
 }

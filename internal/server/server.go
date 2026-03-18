@@ -7,19 +7,22 @@ import (
 
 	"github.com/FedorSidorow/shortener/config"
 	"github.com/FedorSidorow/shortener/internal/interfaces"
+	"github.com/FedorSidorow/shortener/internal/middleware"
 )
 
 type App struct {
 	options      *config.Options
 	shortenerAPI *interfaces.ShortenerHandler
+	pub          *middleware.Publisher
 }
 
 // NewApp инициализирует приложение.
-func NewApp(options *config.Options, shortenerAPI interfaces.ShortenerHandler) *App {
+func NewApp(options *config.Options, shortenerAPI interfaces.ShortenerHandler, pub *middleware.Publisher) *App {
 	log.Printf("Инициализация приложения")
 	return &App{
 		options:      options,
 		shortenerAPI: &shortenerAPI,
+		pub:          pub,
 	}
 }
 
@@ -43,7 +46,7 @@ func (app *App) Run() error {
 
 // createServer создает сервер с задаными путями
 func (app *App) createServer() (*http.Server, error) {
-	router := InitRouter(*app.shortenerAPI, app.options)
+	router := InitRouter(*app.shortenerAPI, app.options, app.pub)
 	server := &http.Server{
 		Addr:    app.options.A,
 		Handler: router,
