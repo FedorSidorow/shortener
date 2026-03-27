@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -13,12 +14,25 @@ import (
 	"github.com/FedorSidorow/shortener/internal/serializers"
 	"github.com/FedorSidorow/shortener/internal/shortenererrors"
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
+// ShortenerServicer интерфейс описывающий необходимые методы для сервисного слоя.
+type ShortenerServicer interface {
+	GetURLByKey(key string) (string, error)
+	GenerateShortURL(ctx context.Context, URL string, host string, userID uuid.UUID) (string, error)
+	PingStorage() bool
+	ListGenerateShortURL(ctx context.Context, data []models.ListJSONShortenRequest, host string) ([]models.ListJSONShortenResponse, error)
+	GetListUserURLs(ctx context.Context, userID uuid.UUID, host string) ([]*models.UserListJSONShortenResponse, error)
+	DeleteListUserURLs(ctx context.Context, userID uuid.UUID, data []string)
+}
+
+// APIHandler Структура объеденяющая все эндпоинты.
 type APIHandler struct {
 	shortService interfaces.ShortenerServicer
 }
 
+// NewHandler создает новую структуру APIHandler.
 func NewHandler(service interfaces.ShortenerServicer) (h *APIHandler, err error) {
 	log.Printf("Инициализация обработчиков событий")
 	hendler := &APIHandler{
@@ -27,6 +41,7 @@ func NewHandler(service interfaces.ShortenerServicer) (h *APIHandler, err error)
 	return hendler, err
 }
 
+// GenerateShortkeyHandler Принимает большой URL и возвращает маленький.
 func (h *APIHandler) GenerateShortKeyHandler(res http.ResponseWriter, req *http.Request) {
 
 	var ctx = req.Context()
@@ -73,9 +88,10 @@ func (h *APIHandler) GenerateShortKeyHandler(res http.ResponseWriter, req *http.
 	res.Write([]byte(shortURL))
 }
 
+// GetURLByKeyHandler Принимает короткий ключ и делает rederict на полный URL
 func (h *APIHandler) GetURLByKeyHandler(res http.ResponseWriter, req *http.Request) {
 	key := chi.URLParam(req, "*")
-	log.Printf("Ключ полученный из chi.URLParam: %s \n", key)
+	// log.Printf("Ключ полученный из chi.URLParam: %s \n", key)
 	url, err := h.shortService.GetURLByKey(key)
 	if err != nil {
 		log.Printf("ошибка %v", err)
@@ -92,6 +108,8 @@ func (h *APIHandler) GetURLByKeyHandler(res http.ResponseWriter, req *http.Reque
 	res.WriteHeader(http.StatusTemporaryRedirect)
 }
 
+// JSONGenerateShortkeyHandler Принимает в теле запроса JSON-объект {"url":"<some_url>"}
+// и возвращает в ответ объект {"result":"<short_url>"}.
 func (h *APIHandler) JSONGenerateShortkeyHandler(res http.ResponseWriter, req *http.Request) {
 
 	var (
@@ -169,6 +187,8 @@ func (h *APIHandler) PingDB(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusOK)
 }
 
+// ListJSONGenerateShortkeyHandler Принимает в теле запроса JSON-объект в виде списка
+// и возвращает в ответ объект в виде списка.
 func (h *APIHandler) ListJSONGenerateShortkeyHandler(res http.ResponseWriter, req *http.Request) {
 	var (
 		validationErr *shortenererrors.ValidationError
@@ -208,6 +228,7 @@ func (h *APIHandler) ListJSONGenerateShortkeyHandler(res http.ResponseWriter, re
 	res.Write(response)
 }
 
+// GetListUserURLsHandler Возвращает список URL-адресов пользователя.
 func (h *APIHandler) GetListUserURLsHandler(res http.ResponseWriter, req *http.Request) {
 	var (
 		ctx        = req.Context()
@@ -246,6 +267,9 @@ func (h *APIHandler) GetListUserURLsHandler(res http.ResponseWriter, req *http.R
 
 }
 
+// DeleteListUserURLsHandler  в теле запроса принимает
+// список идентификаторов сокращённых URL для асинхронного удаления.
+// В случае успешного приёма запроса возвращает HTTP-статус 202 Accepted.
 func (h *APIHandler) DeleteListUserURLsHandler(res http.ResponseWriter, req *http.Request) {
 
 	var (

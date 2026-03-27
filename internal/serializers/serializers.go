@@ -9,6 +9,7 @@ import (
 	"github.com/FedorSidorow/shortener/internal/models"
 )
 
+// PostShortURLUnmarshalBody сериализатор для сокращения одного ЮРЛ.
 func PostShortURLUnmarshalBody(req *http.Request) (*models.JSONShortenRequest, error) {
 
 	defer req.Body.Close()
@@ -34,6 +35,7 @@ func PostShortURLUnmarshalBody(req *http.Request) (*models.JSONShortenRequest, e
 	return &data, nil
 }
 
+// ListPostShortURLUnmarshalBody сериализатор для списка ЮРЛ.
 func ListPostShortURLUnmarshalBody(req *http.Request) ([]models.ListJSONShortenRequest, error) {
 
 	defer req.Body.Close()
@@ -60,6 +62,7 @@ func ListPostShortURLUnmarshalBody(req *http.Request) ([]models.ListJSONShortenR
 	return data, errors.Join(errs...)
 }
 
+// DeleteListUserURLUnmarshalBody сериализатор для удаления ЮРЛ пользователя.
 func DeleteListUserURLUnmarshalBody(req *http.Request) ([]string, error) {
 
 	defer req.Body.Close()
