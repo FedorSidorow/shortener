@@ -14,7 +14,32 @@ import (
 	"github.com/FedorSidorow/shortener/internal/storage"
 )
 
+var (
+	buildVersion string
+	buildDate    string
+	buildCommit  string
+)
+
+func printBuildInfo() {
+	version := buildVersion
+	if version == "" {
+		version = "N/A"
+	}
+	date := buildDate
+	if date == "" {
+		date = "N/A"
+	}
+	commit := buildCommit
+	if commit == "" {
+		commit = "N/A"
+	}
+	log.Printf("Build version: %s", version)
+	log.Printf("Build date: %s", date)
+	log.Printf("Build commit: %s", commit)
+}
+
 func main() {
+	printBuildInfo()
 	app, err := run()
 	if err != nil {
 		log.Printf("Error: %s\n", err)
