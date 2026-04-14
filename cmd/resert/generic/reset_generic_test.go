@@ -15,7 +15,9 @@ type TestStruct struct {
 func (t *TestStruct) Reset() {
 	t.ID = 0
 	t.Name = ""
-	t.Data = t.Data[:0]
+	if t.Data != nil {
+		t.Data = t.Data[:0]
+	}
 }
 
 type TestSliceStruct struct {
@@ -24,7 +26,9 @@ type TestSliceStruct struct {
 }
 
 func (t *TestSliceStruct) Reset() {
-	t.Items = t.Items[:0]
+	if t.Items != nil {
+		t.Items = t.Items[:0]
+	}
 	t.Count = 0
 }
 
@@ -98,10 +102,16 @@ func TestPoolGet(t *testing.T) {
 	pool := New(ts)
 
 	item1 := pool.Get()
+	// After first Get, pool should be empty
+	var zero *TestStruct
 	item2 := pool.Get()
+	if item2 != zero {
+		t.Errorf("Second Get() should return zero value when pool is empty, got %v", item2)
+	}
 
-	if item1 != item2 {
-		t.Errorf("Multiple Get() calls returned different items: %v vs %v", item1, item2)
+	// item1 should be the original item
+	if item1 != ts {
+		t.Errorf("Get() returned different item, got %v, want %v", item1, ts)
 	}
 
 	if item1.ID != 100 || item1.Name != "get_test" || len(item1.Data) != 3 {
@@ -131,9 +141,21 @@ func TestPoolPut(t *testing.T) {
 			newItem.ID, newItem.Name, newItem.Data)
 	}
 
+	// Get should return the most recently put item (LIFO)
 	poolItem := pool.Get()
-	if poolItem.ID != 200 || poolItem.Name != "put_test" || len(poolItem.Data) != 3 {
-		t.Errorf("Pool's internal item was incorrectly modified: %+v", poolItem)
+	if poolItem != newItem {
+		t.Errorf("Get() should return the put item, got %v, want %v", poolItem, newItem)
+	}
+
+	// The put item was reset, so its fields should be zero
+	if poolItem.ID != 0 || poolItem.Name != "" || len(poolItem.Data) != 0 {
+		t.Errorf("Put item should be reset when retrieved, got: %+v", poolItem)
+	}
+
+	// Next Get should return the original item
+	poolItem2 := pool.Get()
+	if poolItem2 != ts {
+		t.Errorf("Second Get() should return original item, got %v, want %v", poolItem2, ts)
 	}
 }
 
@@ -192,12 +214,15 @@ func TestPoolWithMultipleCalls(t *testing.T) {
 
 	pool := New(ts)
 
+	// Put 5 items
+	putItems := make([]*TestStruct, 5)
 	for i := 0; i < 5; i++ {
 		item := &TestStruct{
 			ID:   i + 10,
 			Name: "temp",
 			Data: []byte{byte(i)},
 		}
+		putItems[i] = item
 		pool.Put(item)
 
 		if item.ID != 0 || item.Name != "" || len(item.Data) != 0 {
@@ -205,9 +230,18 @@ func TestPoolWithMultipleCalls(t *testing.T) {
 		}
 	}
 
+	// Get should return items in LIFO order (last put first)
+	for i := 4; i >= 0; i-- {
+		poolItem := pool.Get()
+		if poolItem != putItems[i] {
+			t.Errorf("Get() at iteration %d returned wrong item, got %v, want %v", 4-i, poolItem, putItems[i])
+		}
+	}
+
+	// Finally, the original item should still be in the pool
 	poolItem := pool.Get()
-	if poolItem.ID != 1 || poolItem.Name != "multi" || len(poolItem.Data) != 1 {
-		t.Errorf("Pool's internal item was modified after multiple Put calls: %+v", poolItem)
+	if poolItem != ts {
+		t.Errorf("Original item should still be in pool, got %v, want %v", poolItem, ts)
 	}
 }
 
@@ -259,6 +293,9 @@ func TestPoolWithGeneratedReset(t *testing.T) {
 		t.Errorf("Get() returned different MyStruct item")
 	}
 
+	// Put the original item back
+	pool.Put(item)
+
 	ms2 := &testpkg.MyStruct{
 		ID:   456,
 		Name: "to_reset",
@@ -276,9 +313,15 @@ func TestPoolWithGeneratedReset(t *testing.T) {
 		t.Errorf("Put() did not properly reset MyStruct: %+v", ms2)
 	}
 
-	// Original pool item should be unchanged
-	original := pool.Get()
-	if original.ID != 123 || original.Name != "generated" || len(original.Tags) != 3 {
-		t.Errorf("Pool's internal MyStruct was modified: %+v", original)
+	// Get should return the most recently put item (ms2) - LIFO
+	item2 := pool.Get()
+	if item2 != ms2 {
+		t.Errorf("Get() should return the put item, got %v, want %v", item2, ms2)
+	}
+
+	// Next Get should return the original item (ms)
+	item3 := pool.Get()
+	if item3 != ms {
+		t.Errorf("Second Get() should return original item, got %v, want %v", item3, ms)
 	}
 }

@@ -6,10 +6,10 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-// ExitAnalyzer Линтер запрещает вызов os.Exit в функции main
+// ExitAnalyzer Линтер запрещает вызов os.Exit, log.Fatal и panic в функции main
 var ExitAnalyzer = &analysis.Analyzer{
 	Name: "exitcheck",
-	Doc:  "check for direct os.Exit calls in main",
+	Doc:  "check for direct os.Exit, log.Fatal, and panic calls in main",
 	Run:  run,
 }
 
@@ -30,9 +30,42 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					switch x := node.(type) {
 
 					case *ast.CallExpr:
+						// Check for panic (built-in)
+						if ident, ok := x.Fun.(*ast.Ident); ok && ident.Name == "panic" {
+							pass.Reportf(x.Fun.Pos(), "direct call to panic in main")
+						}
+						// Check for selector expressions (package.Func)
 						if se, ok := x.Fun.(*ast.SelectorExpr); ok {
-							if se.Sel.Name == "Exit" {
-								pass.Reportf(x.Fun.(*ast.SelectorExpr).Pos(), "direct call to os.Exit in main")
+							// Use type information to get the actual package
+							if pass.TypesInfo != nil {
+								obj := pass.TypesInfo.ObjectOf(se.Sel)
+								if obj != nil && obj.Pkg() != nil {
+									pkgPath := obj.Pkg().Path()
+									switch pkgPath {
+									case "os":
+										if se.Sel.Name == "Exit" {
+											pass.Reportf(x.Fun.Pos(), "direct call to os.Exit in main")
+										}
+									case "log":
+										if se.Sel.Name == "Fatal" {
+											pass.Reportf(x.Fun.Pos(), "direct call to log.Fatal in main")
+										}
+									}
+								}
+							} else {
+								// Fallback to identifier-based check
+								if pkgIdent, ok := se.X.(*ast.Ident); ok {
+									switch pkgIdent.Name {
+									case "os":
+										if se.Sel.Name == "Exit" {
+											pass.Reportf(x.Fun.Pos(), "direct call to os.Exit in main")
+										}
+									case "log":
+										if se.Sel.Name == "Fatal" {
+											pass.Reportf(x.Fun.Pos(), "direct call to log.Fatal in main")
+										}
+									}
+								}
 							}
 						}
 
