@@ -1,9 +1,13 @@
 package config
 
 import (
+	"encoding/json"
+	"errors"
 	"flag"
 	"log"
 	"os"
+	"reflect"
+	"strconv"
 )
 
 // defaultSecretKey Конфигурация авторизации.
@@ -19,6 +23,7 @@ type Options struct {
 	AuditFile   string
 	AuditURL    string
 	EnableHTTPS bool
+	ConfigJSON  string
 }
 
 // NewOptions Создаёи и возвращает новый объект Options
@@ -30,6 +35,13 @@ func NewOptions() *Options {
 	options := Options{}
 	options.setValuesFromFlags()
 	options.setValuesFromEnv()
+
+	if err := options.setValuesFromJSONFile(); err != nil {
+		return &options
+	}
+
+	setValuesDefaultIfNil(&options)
+
 	return &options
 }
 
@@ -44,6 +56,7 @@ func (options *Options) setValuesFromFlags() {
 	flag.StringVar(&options.AuditFile, "audit-file", "", "путь к файлу-приёмнику, в который сохраняются логи аудита")
 	flag.StringVar(&options.AuditURL, "audit-url", "", "полный URL удаленного сервера-приёмника, куда отправляются логи аудита")
 	flag.BoolVar(&options.EnableHTTPS, "s", false, "включить HTTPS")
+	flag.StringVar(&options.ConfigJSON, "config", options.ConfigJSON, "JSON конфигурации приложения")
 	flag.Parse()
 }
 
@@ -76,6 +89,89 @@ func (options *Options) setValuesFromEnv() {
 	}
 	if enableHTTPS := os.Getenv("ENABLE_HTTPS"); enableHTTPS != "" {
 		options.EnableHTTPS = setEnableHTTPS(enableHTTPS)
+	}
+	if envConfigJSON := os.Getenv("CONFIG"); envConfigJSON != "" {
+		options.ConfigJSON = envConfigJSON
+	}
+}
+
+// setValuesFromJSONFile() обрабатывает поля из JSONFile,
+// и сохраняет их значения в соответствующих переменных структуры.
+// Возвращает объект Config.
+func getValuesFromJSONFile(pathConfigJSON string) (*Options, error) {
+
+	content, err := os.ReadFile(pathConfigJSON)
+	configJSON := Options{}
+
+	if err != nil {
+		return nil, errors.New(pathConfigJSON + " указанный файл конфигурации не существует.")
+	}
+
+	if err = json.Unmarshal(content, &configJSON); err != nil {
+		return nil, errors.New(pathConfigJSON + " не верный формат JSON.")
+	}
+
+	return &configJSON, nil
+}
+
+// setValuesFromJSONFile() обрабатывает поля из JSONFile,
+// и сохраняет их значения в соответствующих переменных структуры.
+// ТОЛЬКО при условие что у полей структуры нулевые значения.
+func (cfg *Options) setValuesFromJSONFile() error {
+
+	if cfg.ConfigJSON != "" {
+		configJSON, err := getValuesFromJSONFile(cfg.ConfigJSON)
+
+		if err != nil {
+			return err
+		}
+
+		valueConfig := reflect.ValueOf(cfg).Elem()
+		valueConfigJSON := reflect.ValueOf(configJSON).Elem()
+
+		for i := 0; i < valueConfig.NumField(); i++ {
+			field := valueConfig.Field(i)
+			fieldJSON := valueConfigJSON.Field(i)
+
+			if field.IsZero() && !fieldJSON.IsZero() {
+				field.Set(fieldJSON)
+			}
+		}
+	}
+	return nil
+}
+
+// setValuesDefaultIfNil() обрабатывает тег default,
+// и сохраняет их значения в соответствующих переменных структуры.
+// ТОЛЬКО при условие что у полей структуры нулевые значения.
+func setValuesDefaultIfNil(cfg interface{}) {
+	v := reflect.ValueOf(cfg).Elem()
+	t := v.Type()
+
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		tag := t.Field(i).Tag.Get("default")
+
+		if tag == "" && field.Kind() != reflect.Struct {
+			continue
+		}
+		switch field.Kind() {
+
+		case reflect.Struct:
+			setValuesDefaultIfNil(field.Addr().Interface())
+
+		case reflect.String:
+			if field.String() == "" {
+				field.SetString(tag)
+			}
+		case reflect.Int64:
+			if field.Int() == 0 {
+				if intValue, err := strconv.ParseInt(tag, 10, 64); err == nil {
+					field.SetInt(intValue)
+				}
+			}
+
+		}
 	}
 }
 
