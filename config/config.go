@@ -11,13 +11,14 @@ const defaultSecretKey = "supersecretkey"
 
 // Options Общая конфигурация сервиса.
 type Options struct {
-	A         string
-	B         string
-	F         string
-	D         string
-	SecretKey string
-	AuditFile string
-	AuditURL  string
+	A           string
+	B           string
+	F           string
+	D           string
+	SecretKey   string
+	AuditFile   string
+	AuditURL    string
+	EnableHTTPS bool
 }
 
 // NewOptions Создаёи и возвращает новый объект Options
@@ -42,6 +43,7 @@ func (options *Options) setValuesFromFlags() {
 	flag.StringVar(&options.D, "d", "", "cтрока с адресом подключения к БД")
 	flag.StringVar(&options.AuditFile, "audit-file", "", "путь к файлу-приёмнику, в который сохраняются логи аудита")
 	flag.StringVar(&options.AuditURL, "audit-url", "", "полный URL удаленного сервера-приёмника, куда отправляются логи аудита")
+	flag.BoolVar(&options.EnableHTTPS, "s", false, "включить HTTPS")
 	flag.Parse()
 }
 
@@ -72,4 +74,16 @@ func (options *Options) setValuesFromEnv() {
 	if auditURL := os.Getenv("AUDIT_URL"); auditURL != "" {
 		options.AuditURL = auditURL
 	}
+	if enableHTTPS := os.Getenv("ENABLE_HTTPS"); enableHTTPS != "" {
+		options.EnableHTTPS = setEnableHTTPS(enableHTTPS)
+	}
+}
+
+func setEnableHTTPS(s string) bool {
+	if s == "1" || s == "true" || s == "True" {
+		return true
+	} else if s == "0" || s == "false" || s == "False" {
+		return false
+	}
+	return false
 }
