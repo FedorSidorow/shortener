@@ -1,9 +1,11 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/FedorSidorow/shortener/config"
 	"github.com/FedorSidorow/shortener/internal/interfaces"
@@ -28,28 +30,63 @@ func NewApp(options *config.Options, shortenerAPI interfaces.ShortenerHandler, p
 }
 
 // Run() запускает сервер и слушает его по указанному хосту.
+// Deprecated: используйте RunWithContext для graceful shutdown.
 func (app *App) Run() error {
-	server, err := app.createServer()
+	return app.RunWithContext(context.Background())
+}
 
+// RunWithContext запускает сервер с поддержкой graceful shutdown.
+// Сервер будет остановлен при отмене контекста или получении сигналов SIGTERM, SIGINT, SIGQUIT.
+func (app *App) RunWithContext(ctx context.Context) error {
+	server, err := app.createServer()
 	if err != nil {
 		log.Printf("Fail to create server")
-		return fmt.Errorf("ошибка при попытке создания сервера")
+		return fmt.Errorf("ошибка при попытке создания сервера: %w", err)
 	}
 
-	if app.options.EnableHTTPS {
-		if err := server.ListenAndServeTLS("", ""); err != nil {
-			log.Printf("Fail to run server")
-			return fmt.Errorf("ошибка при попытке создания сервера")
+	// Канал для ошибок сервера
+	serverErr := make(chan error, 1)
+
+	// Запуск сервера в горутине
+	go func() {
+		if app.options.EnableHTTPS {
+			if err := server.ListenAndServeTLS("", ""); err != nil && err != http.ErrServerClosed {
+				serverErr <- err
+			}
+		} else {
+			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				serverErr <- err
+			}
 		}
-	} else {
-		if err := server.ListenAndServe(); err != nil {
-			log.Printf("Fail to run server")
-			return fmt.Errorf("ошибка при попытке создания сервера")
+		close(serverErr)
+	}()
+
+	log.Printf("Сервер запущен по адресу: %s", server.Addr)
+
+	// Ожидание отмены контекста или сигнала
+	select {
+	case <-ctx.Done():
+		log.Printf("Получен сигнал завершения работы")
+	case err := <-serverErr:
+		if err != nil {
+			log.Printf("Ошибка сервера: %v", err)
+			return fmt.Errorf("ошибка сервера: %w", err)
 		}
 	}
 
-	log.Printf("Завершение работы сервера")
+	// Graceful shutdown
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
+	log.Printf("Начало graceful shutdown...")
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Printf("Ошибка при graceful shutdown: %v", err)
+		// Принудительное закрытие
+		server.Close()
+		return fmt.Errorf("ошибка graceful shutdown: %w", err)
+	}
+
+	log.Printf("Сервер успешно остановлен")
 	return nil
 }
 
@@ -69,11 +106,8 @@ func (app *App) createServer() (*http.Server, error) {
 		}
 		server.Addr = ":443"
 		server.TLSConfig = manager.TLSConfig()
-		log.Printf("Сервер запущен по адресу: %s \n", server.Addr)
 		return server, nil
 	}
-
-	log.Printf("Сервер запущен по адресу: %s \n", server.Addr)
 
 	return server, nil
 }
