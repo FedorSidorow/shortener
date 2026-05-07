@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/FedorSidorow/shortener/config"
 	"github.com/FedorSidorow/shortener/internal/handler"
@@ -40,34 +43,63 @@ func printBuildInfo() {
 
 func main() {
 	printBuildInfo()
-	app, err := run()
+
+	// Создаем контекст, который будет отменен при получении сигналов
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Обработка сигналов для graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+
+	go func() {
+		sig := <-sigChan
+		log.Printf("Получен сигнал: %v", sig)
+		cancel()
+
+		// Если сигнал пришел повторно, выходим немедленно
+		sig = <-sigChan
+		log.Printf("Получен второй сигнал: %v, принудительное завершение", sig)
+		os.Exit(1)
+	}()
+
+	app, storage, err := run(ctx)
 	if err != nil {
 		log.Printf("Error: %s\n", err)
 		log.Fatal("Initialized fail")
 	}
+	defer func() {
+		if storage != nil {
+			if err := storage.Close(); err != nil {
+				log.Printf("Ошибка при закрытии хранилища: %v", err)
+			} else {
+				log.Printf("Хранилище успешно закрыто")
+			}
+		}
+	}()
 
-	if err := app.Run(); err != nil {
+	if err := app.RunWithContext(ctx); err != nil {
 		log.Printf("Error: %s\n", err)
 		log.Fatal("Run app fail")
 	}
 }
 
 // run() выполняет все предворительные действия и вызывает функцию запуска сервера.
-func run() (*server.App, error) {
+// Возвращает приложение, хранилище и ошибку.
+func run(ctx context.Context) (*server.App, interfaces.Storager, error) {
 	var s interfaces.Storager
 	var err error
-	ctx := context.Context(context.Background())
 
 	options := config.NewOptions()
 
 	if err = logger.Initialize("info"); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	s, err = storage.NewStorage(options)
 	if err != nil {
 		log.Printf("run app fail with storage init: %s\n", err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	newService := service.NewShortenerService(ctx, s)
@@ -75,7 +107,7 @@ func run() (*server.App, error) {
 	handler, err := handler.NewHandler(newService)
 	if err != nil {
 		log.Printf("run app fail with handlers init: %s\n", err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	pub := middleware.CreatePublisher()
@@ -89,5 +121,5 @@ func run() (*server.App, error) {
 
 	appApp := server.NewApp(options, handler, pub)
 
-	return appApp, nil
+	return appApp, s, nil
 }
