@@ -37,14 +37,15 @@ func (app *App) Run() error {
 	}
 
 	if app.options.EnableHTTPS {
-		manager := &autocert.Manager{
-			Cache:      autocert.DirCache("cache-dir"),
-			Prompt:     autocert.AcceptTOS,
-			HostPolicy: autocert.HostWhitelist(app.options.A),
+		if err := server.ListenAndServeTLS("", ""); err != nil {
+			log.Printf("Fail to run server")
+			return fmt.Errorf("ошибка при попытке создания сервера")
 		}
-		server.Addr = ":443"
-		server.TLSConfig = manager.TLSConfig()
-		return server.ListenAndServeTLS("", "")
+	} else {
+		if err := server.ListenAndServe(); err != nil {
+			log.Printf("Fail to run server")
+			return fmt.Errorf("ошибка при попытке создания сервера")
+		}
 	}
 
 	log.Printf("Завершение работы сервера")
@@ -59,6 +60,20 @@ func (app *App) createServer() (*http.Server, error) {
 		Addr:    app.options.A,
 		Handler: router,
 	}
+
+	if app.options.EnableHTTPS {
+		manager := &autocert.Manager{
+			Cache:      autocert.DirCache("cache-dir"),
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist(app.options.A),
+		}
+		server.Addr = ":443"
+		server.TLSConfig = manager.TLSConfig()
+		log.Printf("Сервер запущен по адресу: %s \n", server.Addr)
+		return server, nil
+	}
+
 	log.Printf("Сервер запущен по адресу: %s \n", server.Addr)
+
 	return server, nil
 }
