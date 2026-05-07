@@ -8,6 +8,7 @@ import (
 	"github.com/FedorSidorow/shortener/config"
 	"github.com/FedorSidorow/shortener/internal/interfaces"
 	"github.com/FedorSidorow/shortener/internal/middleware"
+	"golang.org/x/crypto/acme/autocert"
 )
 
 type App struct {
@@ -29,14 +30,22 @@ func NewApp(options *config.Options, shortenerAPI interfaces.ShortenerHandler, p
 // Run() запускает сервер и слушает его по указанному хосту.
 func (app *App) Run() error {
 	server, err := app.createServer()
+
 	if err != nil {
 		log.Printf("Fail to create server")
 		return fmt.Errorf("ошибка при попытке создания сервера")
 	}
 
-	if err := server.ListenAndServe(); err != nil {
-		log.Printf("Fail to run server")
-		return fmt.Errorf("ошибка при попытке создания сервера")
+	if app.options.EnableHTTPS {
+		if err := server.ListenAndServeTLS("", ""); err != nil {
+			log.Printf("Fail to run server")
+			return fmt.Errorf("ошибка при попытке создания сервера")
+		}
+	} else {
+		if err := server.ListenAndServe(); err != nil {
+			log.Printf("Fail to run server")
+			return fmt.Errorf("ошибка при попытке создания сервера")
+		}
 	}
 
 	log.Printf("Завершение работы сервера")
@@ -51,6 +60,20 @@ func (app *App) createServer() (*http.Server, error) {
 		Addr:    app.options.A,
 		Handler: router,
 	}
+
+	if app.options.EnableHTTPS {
+		manager := &autocert.Manager{
+			Cache:      autocert.DirCache("cache-dir"),
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist(app.options.A),
+		}
+		server.Addr = ":443"
+		server.TLSConfig = manager.TLSConfig()
+		log.Printf("Сервер запущен по адресу: %s \n", server.Addr)
+		return server, nil
+	}
+
 	log.Printf("Сервер запущен по адресу: %s \n", server.Addr)
+
 	return server, nil
 }
